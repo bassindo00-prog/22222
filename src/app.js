@@ -111,22 +111,20 @@ function syncMetadata() {
 
 function syncTemplateControls() {
   const carousel = state.template === 'spotify';
-  const model = state.template === 'iphone-model';
   refs.carouselControls.hidden = !carousel;
-  refs.foregroundControls.hidden = !model;
-  refs.coverBackgroundLabel.textContent = model ? 'Fixed scene' : carousel ? 'Cover-derived' : 'Blur';
-  document.querySelectorAll('.background-option').forEach((button) => { button.disabled = model; });
-  refs.spectrumToggle.closest('.spectrum-toggle-row').hidden = model;
+  if (refs.foregroundControls) refs.foregroundControls.hidden = true;
+  refs.coverBackgroundLabel.textContent = carousel ? 'Cover-derived' : 'Blur';
+  document.querySelectorAll('.background-option').forEach((button) => { button.disabled = false; });
+  refs.spectrumToggle.closest('.spectrum-toggle-row').hidden = false;
   refs.spectrumToggle.checked = state.spectrumEnabled;
   refs.carouselDepthValue.textContent = `${state.carouselDepth}%`;
   refs.backgroundIntensityValue.textContent = `${state.backgroundIntensity}%`;
 }
 
 function syncRatioAvailability() {
-  const model = state.template === 'iphone-model';
   document.querySelectorAll('.ratio-button').forEach((button) => {
-    button.disabled = model && button.dataset.ratio !== 'portrait';
-    button.title = button.disabled ? 'Template iPhone Model menggunakan rasio tetap 9:16.' : '';
+    button.disabled = false;
+    button.title = '';
   });
 }
 
@@ -755,17 +753,23 @@ refs.coverDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter
 refs.coverInput.addEventListener('change', () => loadImageFile(refs.coverInput.files?.[0]));
 refs.coverChange.addEventListener('click', (event) => { event.stopPropagation(); refs.coverInput.click(); });
 refs.coverRemove.addEventListener('click', (event) => { event.stopPropagation(); removeCover(); });
-refs.foregroundDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.foregroundInput.click(); });
-refs.foregroundDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.foregroundInput.click(); } });
-refs.foregroundInput.addEventListener('change', () => loadForegroundFile(refs.foregroundInput.files?.[0]));
-refs.foregroundChange.addEventListener('click', (event) => { event.stopPropagation(); refs.foregroundInput.click(); });
-refs.foregroundRemove.addEventListener('click', (event) => { event.stopPropagation(); removeForeground(); });
+if (refs.foregroundDrop && refs.foregroundInput) {
+  refs.foregroundDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.foregroundInput.click(); });
+  refs.foregroundDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.foregroundInput.click(); } });
+  refs.foregroundInput.addEventListener('change', () => loadForegroundFile(refs.foregroundInput.files?.[0]));
+  refs.foregroundChange?.addEventListener('click', (event) => { event.stopPropagation(); refs.foregroundInput.click(); });
+  refs.foregroundRemove?.addEventListener('click', (event) => { event.stopPropagation(); removeForeground(); });
+}
 refs.audioDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.audioInput.click(); });
 refs.audioDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.audioInput.click(); } });
 refs.audioInput.addEventListener('change', () => loadAudioFile(refs.audioInput.files?.[0]));
 refs.audioRemove.addEventListener('click', (event) => { event.stopPropagation(); removeAudio(); });
 
-for (const [zone, input, handler] of [[refs.coverDrop, refs.coverInput, loadImageFile], [refs.foregroundDrop, refs.foregroundInput, loadForegroundFile], [refs.audioDrop, refs.audioInput, loadAudioFile]]) {
+const dropZones = [[refs.coverDrop, refs.coverInput, loadImageFile], [refs.audioDrop, refs.audioInput, loadAudioFile]];
+if (refs.foregroundDrop && refs.foregroundInput) {
+  dropZones.push([refs.foregroundDrop, refs.foregroundInput, loadForegroundFile]);
+}
+for (const [zone, input, handler] of dropZones) {
   zone.addEventListener('dragover', (event) => { event.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
   zone.addEventListener('drop', (event) => { event.preventDefault(); zone.classList.remove('drag-over'); const file = event.dataTransfer?.files?.[0]; if (file) handler(file); });
@@ -810,9 +814,9 @@ refs.volume.addEventListener('input', () => {
   player.draw();
 });
 
-refs.foregroundX.addEventListener('input', () => { state.foregroundX = Number(refs.foregroundX.value) / 100; refs.foregroundXValue.textContent = `${refs.foregroundX.value}%`; player.draw(); });
-refs.foregroundY.addEventListener('input', () => { state.foregroundY = Number(refs.foregroundY.value) / 100; refs.foregroundYValue.textContent = `${refs.foregroundY.value}%`; player.draw(); });
-refs.foregroundScale.addEventListener('input', () => { state.foregroundScale = Number(refs.foregroundScale.value) / 100; refs.foregroundScaleValue.textContent = `${refs.foregroundScale.value}%`; player.draw(); });
+if (refs.foregroundX) refs.foregroundX.addEventListener('input', () => { state.foregroundX = Number(refs.foregroundX.value) / 100; refs.foregroundXValue.textContent = `${refs.foregroundX.value}%`; player.draw(); });
+if (refs.foregroundY) refs.foregroundY.addEventListener('input', () => { state.foregroundY = Number(refs.foregroundY.value) / 100; refs.foregroundYValue.textContent = `${refs.foregroundY.value}%`; player.draw(); });
+if (refs.foregroundScale) refs.foregroundScale.addEventListener('input', () => { state.foregroundScale = Number(refs.foregroundScale.value) / 100; refs.foregroundScaleValue.textContent = `${refs.foregroundScale.value}%`; player.draw(); });
 
 document.querySelectorAll('.ratio-button').forEach((button) => button.addEventListener('click', () => {
   state.ratio = button.dataset.ratio;
@@ -824,15 +828,7 @@ document.querySelectorAll('.background-option').forEach((button) => button.addEv
   updateDesignButtons('.background-option', 'background', state.background); player.draw();
 }));
 document.querySelectorAll('.template-option').forEach((button) => button.addEventListener('click', () => {
-  const nextTemplate = button.dataset.template;
-  if (state.template !== 'iphone-model' && nextTemplate === 'iphone-model') {
-    state.ratioBeforeModel = state.ratio;
-    state.ratio = 'portrait';
-  } else if (state.template === 'iphone-model' && nextTemplate !== 'iphone-model') {
-    state.ratio = state.ratioBeforeModel || 'portrait';
-    state.ratioBeforeModel = null;
-  }
-  state.template = nextTemplate;
+  state.template = button.dataset.template;
   updateDesignButtons('.template-option', 'template', state.template);
   updateDesignButtons('.ratio-button', 'ratio', state.ratio);
   syncRatioAvailability(); syncCanvasSize(); syncTemplateControls(); player.draw();

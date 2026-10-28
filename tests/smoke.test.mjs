@@ -46,11 +46,10 @@ test('production app serves only its local client renderer and static assets', a
     assert.match(html, /Media tetap di perangkat/);
     assert.match(html, /Spotify Carousel/);
     assert.match(html, /Minimal Player/);
-    assert.match(html, /iPhone Model/);
+    assert.doesNotMatch(html, /iPhone Model/);
     assert.match(html, /carousel-depth/);
     assert.match(html, /background-intensity/);
-    assert.match(html, /Foto Depan/);
-    assert.match(html, /foreground-scale/);
+    assert.doesNotMatch(html, /Foto Depan/);
 
     const appResponse = await fetch(`${baseUrl}/src/app.js`);
     assert.equal(appResponse.status, 200);
