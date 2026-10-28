@@ -210,6 +210,10 @@ export class PlayerRenderer {
     this.modelCoverCanvas = null;
     this.modelOverlayCanvas = null;
     this.modelTimeCanvas = null;
+    this.minimalBaseKey = null;
+    this.minimalBaseCanvas = null;
+    this.spotifyBgKey = null;
+    this.spotifyBgCanvas = null;
   }
 
   ensureModelBackground() {
@@ -228,6 +232,8 @@ export class PlayerRenderer {
   setCover(url) {
     this.coverVersion++;
     this.modelSceneKey = null;
+    this.minimalBaseKey = null;
+    this.spotifyBgKey = null;
     if (url && typeof ImageBitmap !== 'undefined' && url instanceof ImageBitmap) {
       this.image = url;
       this.palette = extractCoverPalette(url);
@@ -268,6 +274,8 @@ export class PlayerRenderer {
     this.canvas.width = width;
     this.canvas.height = height;
     this.modelSceneKey = null;
+    this.minimalBaseKey = null;
+    this.spotifyBgKey = null;
     this.draw();
   }
 
@@ -348,6 +356,118 @@ export class PlayerRenderer {
     return { x: coverX + cover * .04, y: coverY + cover + cardH * .043, width: cover * .92, height: cardH * .075 };
   }
 
+  ensureMinimalBase(s, W, H) {
+    const key = [W, H, this.coverVersion, s.title, s.artist, s.background, s.color, s.spectrumEnabled, s.volume, s.playing].join('|');
+    if (key === this.minimalBaseKey && this.minimalBaseCanvas) return this.minimalBaseCanvas;
+
+    const baseCanvas = makeCanvas(W, H);
+    const baseCtx = baseCanvas.getContext('2d');
+
+    const imageWidth = this.image?.naturalWidth || this.image?.width || 0;
+    const imageHeight = this.image?.naturalHeight || this.image?.height || 0;
+    if (s.background === 'blur' && imageWidth && imageHeight) {
+      const scale = Math.max(W / imageWidth, H / imageHeight) * 1.2;
+      const sw = W / scale, sh = H / scale;
+      baseCtx.save(); baseCtx.filter = 'blur(32px) brightness(.48) saturate(.78)';
+      baseCtx.drawImage(this.image, (imageWidth - sw) / 2, (imageHeight - sh) / 2, sw, sh, -25, -25, W + 50, H + 50); baseCtx.restore();
+      const shade = baseCtx.createLinearGradient(0, 0, W * .1, H);
+      shade.addColorStop(0, '#08080a66'); shade.addColorStop(.5, '#08080a22'); shade.addColorStop(1, '#08080a99');
+      baseCtx.fillStyle = shade; baseCtx.fillRect(0, 0, W, H);
+    } else if (s.background === 'gradient') {
+      const g = baseCtx.createLinearGradient(W * .08, H * .05, W * .92, H * .96);
+      g.addColorStop(0, '#6676a1'); g.addColorStop(.45, '#37334e'); g.addColorStop(1, '#292b75');
+      baseCtx.fillStyle = g; baseCtx.fillRect(0, 0, W, H);
+      const glow = baseCtx.createRadialGradient(W * .75, H * .22, 5, W * .75, H * .22, W * .8);
+      glow.addColorStop(0, '#bdadff36'); glow.addColorStop(1, '#7661d000'); baseCtx.fillStyle = glow; baseCtx.fillRect(0, 0, W, H);
+    } else {
+      baseCtx.fillStyle = s.background === 'solid' ? (s.color || '#111116') : '#101015';
+      baseCtx.fillRect(0, 0, W, H);
+      const glow = baseCtx.createRadialGradient(W * .5, H * .1, 0, W * .5, H * .1, H * .9);
+      glow.addColorStop(0, '#ffffff0b'); glow.addColorStop(1, '#ffffff00'); baseCtx.fillStyle = glow; baseCtx.fillRect(0, 0, W, H);
+    }
+
+    const { vertical, landscape, cardW, cardH, cardX, cardY } = this.compositionLayout();
+    const radius = Math.min(W, H) * .065;
+    baseCtx.save();
+    baseCtx.shadowColor = '#0009'; baseCtx.shadowBlur = Math.min(W, H) * .045; baseCtx.shadowOffsetY = Math.min(W, H) * .018;
+    roundedRect(baseCtx, cardX, cardY, cardW, cardH, radius); baseCtx.fillStyle = '#0b0b0cf4'; baseCtx.fill();
+    baseCtx.restore();
+    roundedRect(baseCtx, cardX, cardY, cardW, cardH, radius); baseCtx.strokeStyle = '#ffffff0d'; baseCtx.lineWidth = Math.max(1, W * .0013); baseCtx.stroke();
+
+    if (landscape) {
+      const pad = cardW * .065;
+      const cover = Math.min(cardH * .69, cardW * .37);
+      const coverX = cardX + pad;
+      const coverY = cardY + (cardH - cover) / 2;
+      cropImage(baseCtx, this.image, coverX, coverY, cover, cover, cover * .035);
+      const rightX = coverX + cover + pad * .65;
+      const rightW = cardX + cardW - pad - rightX;
+      const metaY = cardY + cardH * .30;
+      baseCtx.textAlign = 'left'; baseCtx.textBaseline = 'alphabetic';
+      baseCtx.fillStyle = '#9b83df'; baseCtx.font = `600 ${H * .021}px sans-serif`; baseCtx.fillText('NOW PLAYING', rightX, metaY);
+      baseCtx.fillStyle = '#f7f6fa'; baseCtx.font = `700 ${H * .06}px sans-serif`;
+      baseCtx.fillText(fitText(baseCtx, s.title, rightW, baseCtx.font, 'Judul lagu'), rightX, metaY + cardH * .09);
+      baseCtx.fillStyle = '#a6a3ad'; baseCtx.font = `400 ${H * .038}px sans-serif`;
+      baseCtx.fillText(fitText(baseCtx, s.artist, rightW, baseCtx.font, 'Nama artis'), rightX, metaY + cardH * .16);
+      this.drawControls(rightX + rightW * .5, cardY + cardH * .84, Math.min(cardW * .13, rightW * .25), s.playing, H, baseCtx);
+      this.drawVolume(rightX, cardY + cardH * .94, rightW, s.volume, H, baseCtx);
+    } else {
+      const pad = cardW * .075;
+      const cover = Math.min(cardW * .73, cardH * .46, (cardH - pad * 2) * .48);
+      const coverX = cardX + (cardW - cover) / 2;
+      const coverY = cardY + cardH * (vertical ? .08 : .075);
+      cropImage(baseCtx, this.image, coverX, coverY, cover, cover, Math.min(cover * .025, 13));
+      const visualizer = Boolean(s.spectrumEnabled);
+      const metaY = coverY + cover + (visualizer ? cardH * .095 : cardH * .075);
+      const titleSize = W * (vertical ? .037 : .042);
+      const artistSize = W * (vertical ? .027 : .03);
+      baseCtx.textAlign = 'left'; baseCtx.textBaseline = 'alphabetic';
+      baseCtx.fillStyle = '#8b8992'; baseCtx.font = `500 ${W * .018}px sans-serif`; baseCtx.fillText('NOW PLAYING', cardX + pad, metaY);
+      baseCtx.fillStyle = '#f8f7fa'; baseCtx.font = `700 ${titleSize}px sans-serif`;
+      const title = fitText(baseCtx, s.title, cardW - pad * 2, baseCtx.font, 'Judul lagu');
+      baseCtx.fillText(title, cardX + pad, metaY + cardH * (visualizer ? .038 : .052));
+      baseCtx.fillStyle = '#a6a3ad'; baseCtx.font = `400 ${artistSize}px sans-serif`;
+      baseCtx.fillText(fitText(baseCtx, s.artist, cardW - pad * 2, baseCtx.font, 'Nama artis'), cardX + pad, metaY + cardH * (visualizer ? .075 : .091));
+      const controlsY = cardY + cardH * .80;
+      this.drawControls(cardX + cardW * .5, controlsY, cardW * .17, s.playing, W, baseCtx);
+      const volumeY = cardY + cardH * .91;
+      this.drawVolume(cardX + pad, volumeY, cardW - pad * 2, s.volume, W, baseCtx);
+    }
+
+    baseCtx.fillStyle = '#ffffff48'; baseCtx.font = `500 ${Math.min(W, H) * .012}px sans-serif`; baseCtx.textAlign = 'right'; baseCtx.textBaseline = 'alphabetic';
+    baseCtx.fillText('SONICFRAME', W * .96, H * .973);
+
+    this.minimalBaseKey = key;
+    this.minimalBaseCanvas = baseCanvas;
+    return baseCanvas;
+  }
+
+  ensureSpotifyBg(s, W, H, palette, intensity) {
+    const key = [W, H, this.coverVersion, intensity, palette.deep].join('|');
+    if (key === this.spotifyBgKey && this.spotifyBgCanvas) return this.spotifyBgCanvas;
+
+    const bgCanvas = makeCanvas(W, H);
+    const bgCtx = bgCanvas.getContext('2d');
+    bgCtx.fillStyle = palette.deep;
+    bgCtx.fillRect(0, 0, W, H);
+    const imageWidth = this.image?.naturalWidth || this.image?.width || 0;
+    const imageHeight = this.image?.naturalHeight || this.image?.height || 0;
+    if (imageWidth && imageHeight) {
+      const scale = Math.max(W / imageWidth, H / imageHeight);
+      const sw = W / scale, sh = H / scale;
+      bgCtx.save();
+      bgCtx.filter = `blur(${Math.round(Math.min(W, H) * .035)}px) saturate(1.35) brightness(.45)`;
+      bgCtx.drawImage(this.image, (imageWidth - sw) / 2, (imageHeight - sh) / 2, sw, sh, -24, -24, W + 48, H + 48);
+      bgCtx.restore();
+    }
+    bgCtx.fillStyle = toRgba(palette.deep, .52 - intensity * .2);
+    bgCtx.fillRect(0, 0, W, H);
+
+    this.spotifyBgKey = key;
+    this.spotifyBgCanvas = bgCanvas;
+    return bgCanvas;
+  }
+
   draw() {
     const ctx = this.ctx;
     const W = this.canvas.width;
@@ -366,40 +486,29 @@ export class PlayerRenderer {
       return;
     }
 
-    const imageWidth = this.image?.naturalWidth || this.image?.width || 0;
-    const imageHeight = this.image?.naturalHeight || this.image?.height || 0;
-    if (s.background === 'blur' && imageWidth && imageHeight) {
-      const scale = Math.max(W / imageWidth, H / imageHeight) * 1.2;
-      const sw = W / scale, sh = H / scale;
-      ctx.save(); ctx.filter = 'blur(32px) brightness(.48) saturate(.78)';
-      ctx.drawImage(this.image, (imageWidth - sw) / 2, (imageHeight - sh) / 2, sw, sh, -25, -25, W + 50, H + 50); ctx.restore();
-      const shade = ctx.createLinearGradient(0, 0, W * .1, H);
-      shade.addColorStop(0, '#08080a66'); shade.addColorStop(.5, '#08080a22'); shade.addColorStop(1, '#08080a99');
-      ctx.fillStyle = shade; ctx.fillRect(0, 0, W, H);
-    } else if (s.background === 'gradient') {
-      const g = ctx.createLinearGradient(W * .08, H * .05, W * .92, H * .96);
-      g.addColorStop(0, '#6676a1'); g.addColorStop(.45, '#37334e'); g.addColorStop(1, '#292b75');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      const glow = ctx.createRadialGradient(W * .75, H * .22, 5, W * .75, H * .22, W * .8);
-      glow.addColorStop(0, '#bdadff36'); glow.addColorStop(1, '#7661d000'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    } else {
-      ctx.fillStyle = s.background === 'solid' ? (s.color || '#111116') : '#101015';
-      ctx.fillRect(0, 0, W, H);
-      const glow = ctx.createRadialGradient(W * .5, H * .1, 0, W * .5, H * .1, H * .9);
-      glow.addColorStop(0, '#ffffff0b'); glow.addColorStop(1, '#ffffff00'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    }
+    const base = this.ensureMinimalBase(s, W, H);
+    ctx.drawImage(base, 0, 0);
 
     const { vertical, landscape, cardW, cardH, cardX, cardY } = this.compositionLayout();
-    const radius = Math.min(W, H) * .065;
-    ctx.save();
-    ctx.shadowColor = '#0009'; ctx.shadowBlur = Math.min(W, H) * .045; ctx.shadowOffsetY = Math.min(W, H) * .018;
-    roundedRect(ctx, cardX, cardY, cardW, cardH, radius); ctx.fillStyle = '#0b0b0cf4'; ctx.fill();
-    ctx.restore();
-    roundedRect(ctx, cardX, cardY, cardW, cardH, radius); ctx.strokeStyle = '#ffffff0d'; ctx.lineWidth = Math.max(1, W * .0013); ctx.stroke();
-
-    if (landscape) this.drawLandscape(s, cardX, cardY, cardW, cardH, W, H);
-    else this.drawPortrait(s, cardX, cardY, cardW, cardH, W, H, vertical);
-    this.drawSignature(W, H);
+    if (landscape) {
+      const pad = cardW * .065;
+      const cover = Math.min(cardH * .69, cardW * .37);
+      const rightX = cardX + pad + cover + pad * .65;
+      const rightW = cardX + cardW - pad - rightX;
+      const metaY = cardY + cardH * .30;
+      if (s.spectrumEnabled && !s.hideWaveform) this.drawVisualizer(rightX, metaY + cardH * .25, rightW * .86, cardH * .12, s.progress, s.playing);
+      const progY = cardY + cardH * .68;
+      this.drawProgress(rightX, progY, rightW, s.progress, s.current, s.duration, H);
+    } else {
+      const pad = cardW * .075;
+      const cover = Math.min(cardW * .73, cardH * .46, (cardH - pad * 2) * .48);
+      const coverX = cardX + (cardW - cover) / 2;
+      const coverY = cardY + cardH * (vertical ? .08 : .075);
+      const visualizer = Boolean(s.spectrumEnabled);
+      if (visualizer && !s.hideWaveform) this.drawVisualizer(coverX + cover * .04, coverY + cover + cardH * .02, cover * .92, cardH * .065, s.progress, s.playing);
+      const progY = cardY + cardH * .69;
+      this.drawProgress(cardX + pad, progY, cardW - pad * 2, s.progress, s.current, s.duration, W);
+    }
   }
 
   drawIphoneModel(s, W, H) {
@@ -594,20 +703,8 @@ export class PlayerRenderer {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, W, H);
     } else {
-      ctx.fillStyle = palette.deep;
-      ctx.fillRect(0, 0, W, H);
-      const imageWidth = this.image?.naturalWidth || this.image?.width || 0;
-      const imageHeight = this.image?.naturalHeight || this.image?.height || 0;
-      if (imageWidth && imageHeight) {
-        const scale = Math.max(W / imageWidth, H / imageHeight);
-        const sw = W / scale, sh = H / scale;
-        ctx.save();
-        ctx.filter = `blur(${Math.round(Math.min(W, H) * .035)}px) saturate(1.35) brightness(.45)`;
-        ctx.drawImage(this.image, (imageWidth - sw) / 2, (imageHeight - sh) / 2, sw, sh, -24, -24, W + 48, H + 48);
-        ctx.restore();
-      }
-      ctx.fillStyle = toRgba(palette.deep, .52 - intensity * .2);
-      ctx.fillRect(0, 0, W, H);
+      const bg = this.ensureSpotifyBg(s, W, H, palette, intensity);
+      ctx.drawImage(bg, 0, 0);
     }
 
     const glowX = W * (.22 + .56 * ((Math.sin(time * .16) + 1) / 2));
@@ -847,8 +944,7 @@ export class PlayerRenderer {
     ctx.beginPath(); ctx.arc(x + Math.max(0, Math.min(1, progress)) * width, barY + barH / 2, unit * .006, 0, TAU); ctx.fillStyle = '#fff'; ctx.fill();
   }
 
-  drawControls(cx, cy, gap, playing, unit) {
-    const ctx = this.ctx;
+  drawControls(cx, cy, gap, playing, unit, ctx = this.ctx) {
     const big = unit * .044;
     const side = unit * .023;
     ctx.fillStyle = '#f4f3f6'; ctx.strokeStyle = '#f4f3f6'; ctx.lineWidth = unit * .004; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -867,8 +963,7 @@ export class PlayerRenderer {
     ctx.beginPath(); ctx.moveTo(cx + gap * 1.1, cy - side); ctx.lineTo(cx + gap * 1.7, cy); ctx.lineTo(cx + gap * 1.1, cy + side); ctx.closePath(); ctx.fill();
   }
 
-  drawVolume(x, y, width, volume, unit) {
-    const ctx = this.ctx;
+  drawVolume(x, y, width, volume, unit, ctx = this.ctx) {
     const icon = unit * .015;
     const trackH = Math.max(3, unit * .005);
     ctx.fillStyle = '#77747f';

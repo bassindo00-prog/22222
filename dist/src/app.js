@@ -489,8 +489,8 @@ async function detectRenderCapabilities(width, height, bitrate) {
   if (!window.VideoEncoder || !window.AudioEncoder) throw new Error('Browser ini belum menyediakan WebCodecs untuk encode audio/video lokal. Coba Chrome atau Edge terbaru.');
   if (!window.AudioContext && !window.webkitAudioContext) throw new Error('Browser ini belum mendukung Web Audio API untuk membaca audio lokal.');
 
-  const level = width >= 1000 || height >= 1000 ? '029' : '01f';
-  const codecs = [`avc1.420${level}`, `avc1.4d40${level}`, `avc1.6400${level}`];
+  const levelHex = (width >= 1000 || height >= 1000 ? 0x29 : 0x1f).toString(16).padStart(2, '0');
+  const codecs = [`avc1.6400${levelHex}`, `avc1.4d40${levelHex}`, `avc1.4200${levelHex}`];
   let chosenVideo = null;
   for (const codec of codecs) {
     for (const hardwareAcceleration of ['prefer-hardware', 'no-preference', 'prefer-software']) {
@@ -499,7 +499,10 @@ async function detectRenderCapabilities(width, height, bitrate) {
           codec, width, height, bitrate, framerate: 30, latencyMode: 'quality', hardwareAcceleration
         });
         if (support.supported) {
-          chosenVideo = { codec: support.config.codec || codec, hardwareAcceleration };
+          chosenVideo = {
+            codec: support.config.codec || codec,
+            hardwareAcceleration: support.config.hardwareAcceleration || hardwareAcceleration
+          };
           break;
         }
       } catch {}
@@ -576,8 +579,10 @@ function abortError() { return new DOMException('Render dibatalkan.', 'AbortErro
 async function renderLocally(token, controller, worker, renderContext) {
   const context = renderContext.context;
   setProgress(null, 'Mendekodekan audio di perangkat…', 'Membaca file lokal untuk menyiapkan rentang terpilih.', 'Tidak ada file yang dikirim ke server');
+  const decodeStart = performance.now();
   const encoded = await state.audioFile.arrayBuffer();
   const decoded = await context.decodeAudioData(encoded);
+  const audioDecodeMs = performance.now() - decodeStart;
   if (token.cancelled) throw abortError();
   if (decoded.numberOfChannels > 8) throw new Error('Audio memiliki lebih dari 8 channel; ekspor lokal dibatasi demi penggunaan memori.');
   const sampleRate = decoded.sampleRate;
@@ -634,7 +639,7 @@ async function renderLocally(token, controller, worker, renderContext) {
   }
   if (token.cancelled) throw abortError();
   const result = controller.wait('result');
-  worker.postMessage({ type: 'audio-complete', peaks: state.peaks });
+  worker.postMessage({ type: 'audio-complete', peaks: state.peaks, audioDecodeMs });
   const completed = await result;
   if (token.cancelled) throw abortError();
   return { ...completed, duration, width, height, bitrate };
@@ -690,6 +695,23 @@ async function renderVideo() {
     state.outputUrl = outputUrl;
     const fileName = safeFileName();
     const elapsed = (performance.now() - renderStartedAt) / 1000;
+    if (result.metrics) {
+      console.info('[SonicFrame Benchmark Results]:', {
+        resolution: `${result.width}x${result.height}`,
+        durationSeconds: Number(result.duration.toFixed(2)),
+        totalFrames: result.metrics.totalFrames,
+        effectiveFps: Number(result.metrics.fps?.toFixed(1) || 0),
+        audioDecodeMs: Math.round(result.metrics.audioDecodeMs || 0),
+        audioEncodeMs: Math.round(result.metrics.audioEncodeMs || 0),
+        frameGenerationMs: Math.round(result.metrics.frameGenMs || 0),
+        videoEncodeMs: Math.round(result.metrics.videoEncodeMs || 0),
+        mp4MuxingMs: Math.round(result.metrics.muxMs || 0),
+        totalEncodingWallSec: Number(((result.metrics.totalEncodingWallMs || 0) / 1000).toFixed(2)),
+        totalPipelineSec: Number(((result.metrics.totalPipelineMs || 0) / 1000).toFixed(2)),
+        videoCodec: result.metrics.videoCodec,
+        hardwareAcceleration: result.metrics.hardwareAcceleration
+      });
+    }
     refs.outputFilename.textContent = fileName;
     refs.outputMeta.textContent = `${result.width} × ${result.height} · ${formatTime(result.duration)} · ${formatBytes(blob.size)} · ${elapsed.toFixed(1)} dtk di perangkat ini`;
     refs.outputVideo.src = outputUrl;

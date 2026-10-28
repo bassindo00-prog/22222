@@ -19,6 +19,7 @@ let videoSource;
 let frameState;
 let config;
 let sourceStarted = false;
+let audioEncodeMs = 0;
 
 function sendError(error) {
   self.postMessage({ type: 'error', message: error?.message || 'Browser gagal membuat MP4.' });
@@ -111,10 +112,12 @@ async function addAudio(message) {
     sampleRate: message.sampleRate,
     timestamp: message.timestamp
   });
+  const t0 = performance.now();
   try {
     if (canceled) throw new DOMException('Render dibatalkan.', 'AbortError');
     await audioSource.add(sample);
   } finally {
+    audioEncodeMs += (performance.now() - t0);
     sample.close();
   }
   self.postMessage({ type: 'audio-accepted', id: message.id });
@@ -122,8 +125,12 @@ async function addAudio(message) {
 
 async function finish(message) {
   const peaks = message.peaks || [];
+  const audioDecodeMs = message.audioDecodeMs || 0;
   const totalFrames = Math.ceil(config.duration * config.fps);
   const startedAt = performance.now();
+  let frameGenMs = 0;
+  let videoEncodeMs = 0;
+
   for (let frame = 0; frame < totalFrames; frame++) {
     if (canceled) throw new DOMException('Render dibatalkan.', 'AbortError');
     const time = frame / config.fps;
@@ -132,21 +139,33 @@ async function finish(message) {
     frameState.spectrum = config.spectrumEnabled
       ? createVisualizerSpectrum(time, config.duration, peaks)
       : null;
+
+    const tDraw = performance.now();
     renderer.draw();
+    frameGenMs += (performance.now() - tDraw);
+
     const frameDuration = Math.min(1 / config.fps, config.duration - time);
+    const tEnc = performance.now();
     await videoSource.add(time, frameDuration > 0 ? frameDuration : 1 / config.fps, { keyFrame: frame === 0 });
-    if (frame % 15 === 14 || frame === totalFrames - 1) {
+    videoEncodeMs += (performance.now() - tEnc);
+
+    if (frame % 30 === 29 || frame === totalFrames - 1) {
       self.postMessage({
         type: 'progress', phase: 'video', done: frame + 1, total: totalFrames,
         percent: Math.min(97, Math.round((frame + 1) / totalFrames * 97)),
-        elapsed: (performance.now() - startedAt) / 1000
+        elapsed: (performance.now() - startedAt) / 1000,
+        fps: ((frame + 1) / ((performance.now() - startedAt) / 1000)).toFixed(1)
       });
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
   if (canceled) throw new DOMException('Render dibatalkan.', 'AbortError');
   self.postMessage({ type: 'progress', phase: 'finalize', percent: 98, done: totalFrames, total: totalFrames });
+
+  const tMux = performance.now();
   await output.finalize();
+  const muxMs = performance.now() - tMux;
+
   if (canceled) throw new DOMException('Render dibatalkan.', 'AbortError');
   const result = output.target.buffer;
   const bytes = result instanceof Uint8Array
@@ -156,7 +175,27 @@ async function finish(message) {
   const validMp4 = bytes.byteLength > 16
     && view.getUint32(4) === 0x66747970; // ftyp
   if (!validMp4) throw new Error('Encoder selesai, tetapi hasilnya bukan file MP4 yang valid.');
-  self.postMessage({ type: 'result', buffer: bytes, duration: config.duration }, [bytes]);
+
+  const totalEncodingWallMs = performance.now() - startedAt;
+  const totalPipelineMs = totalEncodingWallMs + audioDecodeMs + audioEncodeMs;
+
+  const metrics = {
+    audioDecodeMs,
+    audioEncodeMs,
+    frameGenMs,
+    videoEncodeMs,
+    muxMs,
+    totalEncodingWallMs,
+    totalPipelineMs,
+    totalFrames,
+    fps: (totalFrames / (totalEncodingWallMs / 1000)),
+    videoCodec: config.videoCodec,
+    hardwareAcceleration: config.hardwareAcceleration,
+    width: config.width,
+    height: config.height
+  };
+
+  self.postMessage({ type: 'result', buffer: bytes, duration: config.duration, metrics }, [bytes]);
   await dispose();
 }
 

@@ -52,23 +52,21 @@
             <p id="cover-error" class="field-error" role="alert" hidden></p>
           </div>
 
-          <div id="iphone-photo-controls" class="iphone-photo-controls" hidden>
-            <div class="field-block">
-              <div class="field-label-row"><label for="background-photo-input">Background Photo</label><span class="label-hint">FOTO ASLI</span></div>
-              <input id="background-photo-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif" />
-              <div id="background-photo-drop" class="cover-drop photo-drop" role="button" tabindex="0" aria-label="Pilih background photo">
-                <div id="background-photo-empty" class="cover-empty"><span class="upload-glyph">↥</span><strong>Tambah foto berisi orang</strong><span>Foto ini menjadi latar asli scene</span><small>JPG, PNG, WebP, AVIF · maks. 30 MB</small></div>
-                <div id="background-photo-filled" class="cover-filled" hidden><img id="background-photo-thumb" alt="Preview background photo" /><div class="cover-file-copy"><strong id="background-photo-name"></strong><span id="background-photo-size"></span></div><button id="background-photo-remove" class="icon-button remove-button" type="button" aria-label="Hapus background photo">×</button><button id="background-photo-change" class="text-button" type="button">Ganti foto</button></div>
+          <div id="foreground-controls" class="foreground-controls" hidden>
+            <div class="field-block foreground-upload">
+              <div class="field-label-row"><label for="foreground-input">Foto Depan</label><span class="label-hint">FOTO TERPISAH</span></div>
+              <input id="foreground-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,.jpg,.jpeg,.png,.webp,.avif,.gif" />
+              <div id="foreground-drop" class="foreground-drop cover-drop" role="button" tabindex="0" aria-label="Pilih foto depan">
+                <div id="foreground-empty" class="foreground-empty"><span>＋</span><strong>Tambah foto depan</strong><small>JPG, PNG, WebP, AVIF · maks. 20 MB</small></div>
+                <div id="foreground-filled" class="foreground-filled" hidden><img id="foreground-thumb" alt="Preview foto depan" /><div><strong id="foreground-name"></strong><small id="foreground-size"></small></div><button id="foreground-remove" class="icon-button" type="button" aria-label="Hapus foto depan">×</button><button id="foreground-change" class="text-button" type="button">Ganti foto</button></div>
               </div>
-              <p id="background-photo-error" class="field-error" role="alert" hidden></p>
+              <p id="foreground-error" class="field-error" role="alert" hidden></p>
+              <p class="foreground-note">Foto biasa tetap berbentuk persegi panjang; PNG/WebP transparan bisa menampilkan cut-out.</p>
             </div>
-            <div id="person-mask-controls" class="person-mask-controls" hidden>
-              <div class="field-label-row"><span class="group-label">Mask orang · manual lokal</span><span id="mask-state-label" class="label-hint">Kuas dipilih</span></div>
-              <p class="mask-help">Segmentasi otomatis lokal tidak tersedia. Cat bagian orang dengan kuas; hapus area latar yang ikut terpilih. Foto asli tetap dipakai sebagai latar.</p>
-              <div class="mask-toolbar" role="group" aria-label="Alat mask orang"><button type="button" data-mask-tool="paint" class="mask-tool selected" aria-pressed="true">Kuas</button><button type="button" data-mask-tool="erase" class="mask-tool" aria-pressed="false">Penghapus</button><button id="mask-undo" type="button" class="quiet-button" disabled>Undo</button><button id="mask-clear" type="button" class="quiet-button" disabled>Bersihkan</button></div>
-              <div class="foreground-range mask-brush"><label for="mask-brush-size">Ukuran kuas <output id="mask-brush-value">7%</output></label><input id="mask-brush-size" type="range" min="2" max="18" value="7" /></div>
-              <div class="mask-editor-wrap"><canvas id="mask-editor-canvas" aria-label="Lukis mask di atas orang pada foto"></canvas><span class="mask-editor-badge">AREA MERAH = ORANG DI DEPAN</span></div>
-              <p id="mask-error" class="field-error" role="alert" hidden></p>
+            <div class="foreground-adjustments">
+              <div class="foreground-range"><label for="foreground-x">Posisi kiri ↔ kanan <output id="foreground-x-value">58%</output></label><input id="foreground-x" type="range" min="25" max="85" value="58" /></div>
+              <div class="foreground-range"><label for="foreground-y">Posisi atas ↕ bawah <output id="foreground-y-value">62%</output></label><input id="foreground-y" type="range" min="20" max="82" value="62" /></div>
+              <div class="foreground-range"><label for="foreground-scale">Ukuran foto <output id="foreground-scale-value">100%</output></label><input id="foreground-scale" type="range" min="55" max="145" value="100" /></div>
             </div>
           </div>
 
@@ -137,20 +135,6 @@
             <button type="button" data-template="iphone-model" class="template-option" aria-pressed="false"><span class="template-preview model-preview"><span class="model-mini-cover"></span><span class="model-mini-portrait"></span></span><b>iPhone Model</b><span>Latar player tetap · foto depan bisa diganti</span></button>
           </div>
             <label class="spectrum-toggle-row" for="spectrum-toggle"><span><strong>Audio spectrum</strong><small>Tampilkan gelombang audio di player</small></span><input id="spectrum-toggle" type="checkbox" aria-label="Tampilkan audio spectrum" /></label>
-          </div>
-
-          <div id="iphone-player-controls" class="iphone-player-controls" hidden>
-            <div class="field-label-row"><span class="group-label">Posisi & perspektif player</span><span class="label-hint">LAYER DI BELAKANG</span></div>
-            <div class="foreground-adjustments">
-              <div class="foreground-range"><label for="player-x">Posisi X <output id="player-x-value">22%</output></label><input id="player-x" type="range" min="5" max="60" value="22" /></div>
-              <div class="foreground-range"><label for="player-y">Posisi Y <output id="player-y-value">57%</output></label><input id="player-y" type="range" min="25" max="78" value="57" /></div>
-              <div class="foreground-range"><label for="player-scale">Skala <output id="player-scale-value">100%</output></label><input id="player-scale" type="range" min="55" max="145" value="100" /></div>
-              <div class="foreground-range"><label for="player-rotation">Rotasi <output id="player-rotation-value">0°</output></label><input id="player-rotation" type="range" min="-25" max="25" value="0" /></div>
-              <div class="foreground-range"><label for="player-perspective">Perspektif <output id="player-perspective-value">50%</output></label><input id="player-perspective" type="range" min="0" max="100" value="50" /></div>
-              <div class="foreground-range"><label for="player-depth">Kedalaman layer <output id="player-depth-value">50%</output></label><input id="player-depth" type="range" min="0" max="100" value="50" /></div>
-              <div class="foreground-range"><label for="player-opacity">Transparansi <output id="player-opacity-value">86%</output></label><input id="player-opacity" type="range" min="35" max="100" value="86" /></div>
-            </div>
-            <div class="screen-calibration"><div class="mask-toolbar"><button id="calibrate-screen" type="button" class="quiet-button">Atur empat sudut cover</button><button id="reset-screen-corners" type="button" class="quiet-button">Reset sudut</button></div><small id="screen-calibration-help">Geser 4 titik pada preview agar cover pas di layar.</small></div>
           </div>
 
           <div id="carousel-controls" class="carousel-controls" hidden>
