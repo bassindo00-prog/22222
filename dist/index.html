@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090d" />
+    <meta name="description" content="Buat video musik MP4 dengan cover, waveform, dan player yang bisa dikustomisasi." />
+    <title>SonicFrame — Music Video Maker</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="SonicFrame beranda">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>Sonic<span>Frame</span></span>
+      </a>
+      <div class="topbar-note"><span class="status-dot"></span> Workspace lokal <span class="topbar-divider">·</span> Audio tetap di perangkat Anda</div>
+      <a class="help-link" href="#how-it-works">Cara kerja <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main id="top" class="page-shell">
+      <section class="intro-row">
+        <div>
+          <p class="eyebrow">MUSIC VIDEO STUDIO <span class="eyebrow-line"></span></p>
+          <h1>Ubah lagu jadi <span>visual yang terasa.</span></h1>
+          <p class="intro-copy">Atur cover, pilih potongan favorit, lalu ekspor video musik siap dibagikan.</p>
+        </div>
+        <div class="workflow" aria-label="Alur pembuatan video">
+          <div class="workflow-step active"><b>01</b><span>Konten</span></div><span class="workflow-line"></span>
+          <div class="workflow-step"><b>02</b><span>Preview</span></div><span class="workflow-line"></span>
+          <div class="workflow-step"><b>03</b><span>Ekspor</span></div>
+        </div>
+      </section>
+
+      <section class="editor-grid" aria-label="Editor video musik">
+        <aside class="panel content-panel">
+          <div class="panel-heading"><div><span class="section-index">01</span><h2>Konten</h2></div><span class="step-caption">Tambahkan media</span></div>
+
+          <div class="field-block">
+            <div class="field-label-row"><label for="cover-input">Cover album</label><span class="label-hint">JPG · PNG · WEBP</span></div>
+            <input id="cover-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+            <div id="cover-drop" class="cover-drop" role="button" tabindex="0" aria-label="Pilih gambar cover album">
+              <div id="cover-empty" class="cover-empty"><span class="upload-glyph">↥</span><strong>Tarik cover ke sini</strong><span>atau <u>pilih file</u> dari perangkat</span><small>JPG, PNG, WebP · maks. 20 MB</small></div>
+              <div id="cover-filled" class="cover-filled" hidden>
+                <img id="cover-thumb" alt="Preview cover album" />
+                <div class="cover-file-copy"><strong id="cover-name"></strong><span id="cover-size"></span></div>
+                <button id="cover-remove" class="icon-button remove-button" type="button" aria-label="Hapus cover">×</button>
+                <button id="cover-change" class="text-button" type="button">Ganti cover</button>
+              </div>
+            </div>
+            <p id="cover-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <div id="foreground-controls" class="foreground-controls" hidden>
+            <div class="field-block foreground-upload">
+              <div class="field-label-row"><label for="foreground-input">Foto Depan</label><span class="label-hint">FOTO TERPISAH</span></div>
+              <input id="foreground-input" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,.jpg,.jpeg,.png,.webp,.avif,.gif" />
+              <div id="foreground-drop" class="foreground-drop cover-drop" role="button" tabindex="0" aria-label="Pilih foto depan">
+                <div id="foreground-empty" class="foreground-empty"><span>＋</span><strong>Tambah foto depan</strong><small>JPG, PNG, WebP, AVIF · maks. 20 MB</small></div>
+                <div id="foreground-filled" class="foreground-filled" hidden><img id="foreground-thumb" alt="Preview foto depan" /><div><strong id="foreground-name"></strong><small id="foreground-size"></small></div><button id="foreground-remove" class="icon-button" type="button" aria-label="Hapus foto depan">×</button><button id="foreground-change" class="text-button" type="button">Ganti foto</button></div>
+              </div>
+              <p id="foreground-error" class="field-error" role="alert" hidden></p>
+              <p class="foreground-note">Foto biasa tetap berbentuk persegi panjang; PNG/WebP transparan bisa menampilkan cut-out.</p>
+            </div>
+            <div class="foreground-adjustments">
+              <div class="foreground-range"><label for="foreground-x">Posisi kiri ↔ kanan <output id="foreground-x-value">58%</output></label><input id="foreground-x" type="range" min="25" max="85" value="58" /></div>
+              <div class="foreground-range"><label for="foreground-y">Posisi atas ↕ bawah <output id="foreground-y-value">62%</output></label><input id="foreground-y" type="range" min="20" max="82" value="62" /></div>
+              <div class="foreground-range"><label for="foreground-scale">Ukuran foto <output id="foreground-scale-value">100%</output></label><input id="foreground-scale" type="range" min="55" max="145" value="100" /></div>
+            </div>
+          </div>
+
+          <div class="field-block audio-field">
+            <div class="field-label-row"><label for="audio-input">File audio</label><span class="label-hint">MP3 · WAV</span></div>
+            <input id="audio-input" class="visually-hidden" type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,.mp3,.wav" />
+            <div id="audio-drop" class="audio-drop" role="button" tabindex="0" aria-label="Pilih file audio">
+              <div class="audio-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.6 2-3.5 2S2 19.1 2 18s1.6-2 3.5-2S9 16.9 9 18Zm12-2c0 1.1-1.6 2-3.5 2s-3.5-.9-3.5-2 1.6-2 3.5-2 3.5.9 3.5 2ZM9 9l12-2"/></svg></div>
+              <div id="audio-empty" class="audio-empty"><strong>Pilih file audio</strong><span>atau tarik file ke area ini · maks. 60 MB</span></div>
+              <div id="audio-filled" class="audio-file-copy" hidden><strong id="audio-name"></strong><span><span id="audio-size"></span><i>·</i><span id="audio-duration">Memuat durasi…</span></span></div>
+              <button id="audio-remove" class="icon-button remove-button audio-remove" type="button" aria-label="Hapus audio" hidden>×</button>
+            </div>
+            <p id="audio-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <div class="metadata-fields">
+            <div class="field-block"><label for="track-title">Judul lagu</label><input id="track-title" class="text-input" type="text" maxlength="90" placeholder="Contoh: Midnight City" /></div>
+            <div class="field-block"><label for="track-artist">Nama artis</label><input id="track-artist" class="text-input" type="text" maxlength="70" placeholder="Contoh: M83" /></div>
+            <div class="field-block"><label for="track-album">Nama album <span class="optional">opsional</span></label><input id="track-album" class="text-input" type="text" maxlength="80" placeholder="Tambahkan nama album" /></div>
+          </div>
+
+          <div class="panel-separator"></div>
+          <div class="field-label-row trim-heading"><div><span class="section-index">02</span><h3>Potong lagu</h3></div><span id="original-duration" class="label-hint">00:00 total</span></div>
+          <p class="helper-copy">Pilih bagian yang ingin masuk ke video.</p>
+          <div class="waveform-wrap"><canvas id="waveform" aria-label="Waveform audio. Seret handle untuk memilih bagian lagu."></canvas><div class="wave-labels"><span>00:00</span><span id="waveform-end">00:00</span></div></div>
+          <div class="trim-times">
+            <div class="time-input-wrap"><label for="trim-start">MULAI</label><div><input id="trim-start" type="text" inputmode="numeric" value="00:00" aria-label="Waktu mulai menit dan detik"/><span>↗</span></div></div>
+            <span class="trim-arrow">→</span>
+            <div class="time-input-wrap"><label for="trim-end">AKHIR</label><div><input id="trim-end" type="text" inputmode="numeric" value="00:00" aria-label="Waktu akhir menit dan detik"/><span>↙</span></div></div>
+            <div class="selection-length"><span>DURASI PILIHAN</span><strong id="selection-duration">00:00</strong></div>
+          </div>
+          <p id="trim-error" class="field-error trim-error" role="alert" hidden></p>
+          <div class="trim-actions"><button id="play-selection" class="small-button" type="button" disabled><span class="button-play-icon">▶</span> Preview pilihan</button><button id="reset-trim" class="quiet-button" type="button" disabled>Reset</button></div>
+        </aside>
+
+        <section class="panel preview-panel" aria-label="Preview video">
+          <div class="panel-heading preview-heading"><div><span class="section-index">03</span><h2>Preview</h2></div><div class="ratio-picker" role="group" aria-label="Rasio video">
+            <button type="button" data-ratio="portrait" class="ratio-button selected" aria-pressed="true"><span class="ratio-icon portrait-icon"></span>9:16</button>
+            <button type="button" data-ratio="square" class="ratio-button" aria-pressed="false"><span class="ratio-icon square-icon"></span>1:1</button>
+            <button type="button" data-ratio="landscape" class="ratio-button" aria-pressed="false"><span class="ratio-icon landscape-icon"></span>16:9</button>
+          </div></div>
+          <div class="preview-stage">
+            <div class="preview-glow"></div>
+            <canvas id="player-canvas" width="720" height="1280" aria-label="Preview player musik"></canvas>
+            <div id="preview-empty" class="preview-empty"><div class="empty-art"><span class="empty-disc"></span><span class="empty-note">♫</span></div><strong>Visual dimulai dari sini</strong><span>Tambahkan cover dan lagu untuk melihat preview.</span></div>
+            <div class="preview-corner-label"><span class="live-pip"></span> LIVE PREVIEW</div>
+          </div>
+          <div class="preview-underbar"><div class="preview-track-line"><span id="preview-track-title">Judul lagu Anda</span><span id="preview-track-artist">Nama artis</span></div><div class="preview-playback"><button id="preview-play" class="round-play" type="button" aria-label="Putar audio" disabled><span>▶</span></button><div class="preview-scrub-wrap"><div class="preview-scrub-meta"><span id="current-time">00:00</span><span id="remaining-time">−00:00</span></div><input id="preview-scrub" class="scrub-range" type="range" min="0" max="1000" value="0" aria-label="Posisi pemutaran" disabled /></div><button id="skip-start" class="skip-button" type="button" aria-label="Kembali ke awal pilihan" disabled>↶</button><button id="skip-end" class="skip-button" type="button" aria-label="Ke akhir pilihan" disabled>↷</button></div>
+            <div class="volume-control"><span class="volume-icon" aria-hidden="true">◖))</span><input id="volume-control" type="range" min="0" max="100" value="80" aria-label="Volume preview"/><span id="volume-label">80%</span></div>
+          </div>
+        </section>
+
+        <aside class="panel design-panel">
+          <div class="panel-heading"><div><span class="section-index">04</span><h2>Tampilan</h2></div><span class="step-caption">Atur gaya video</span></div>
+          <div class="design-group"><div class="field-label-row"><span class="group-label">Background</span><span class="label-hint">PILIH GAYA</span></div><div class="background-options" role="group" aria-label="Gaya background">
+            <button type="button" data-background="blur" class="background-option selected" aria-pressed="true"><span class="background-swatch blur-swatch"><span class="mini-art"></span></span><b id="cover-background-label">Blur</b></button>
+            <button type="button" data-background="solid" class="background-option" aria-pressed="false"><span class="background-swatch solid-swatch"></span><b>Solid</b></button>
+            <button type="button" data-background="gradient" class="background-option" aria-pressed="false"><span class="background-swatch gradient-swatch"></span><b>Gradient</b></button>
+          </div>
+            <div id="color-row" class="color-row" hidden><label for="background-color">Warna solid</label><input id="background-color" type="color" value="#111116" aria-label="Pilih warna background solid"/><span id="color-value">#111116</span></div>
+          </div>
+
+          <div class="design-group template-group"><div class="field-label-row"><span class="group-label">Template player</span><span class="label-hint">PILIH TAMPILAN</span></div><div class="template-options" role="group" aria-label="Template player">
+            <button type="button" data-template="minimal" class="template-option selected" aria-pressed="true"><span class="template-preview minimal-preview"><span class="mini-cover"></span><span class="mini-lines"><i></i><i></i><i></i></span><span class="mini-controls"><i></i><i></i><i></i></span></span><b>Minimal Player</b><span>Player iPhone yang sekarang</span></button>
+            <button type="button" data-template="spotify" class="template-option" aria-pressed="false"><span class="template-preview spotify-preview"><span class="spotify-mini-card far"></span><span class="spotify-mini-card side"></span><span class="spotify-mini-card selected"></span><span class="spotify-mini-card side right"></span><span class="spotify-mini-bar"></span></span><b>Spotify Carousel</b><span>Cover carousel dan floating player</span></button>
+            <button type="button" data-template="iphone-model" class="template-option" aria-pressed="false"><span class="template-preview model-preview"><span class="model-mini-cover"></span><span class="model-mini-portrait"></span></span><b>iPhone Model</b><span>Latar player tetap · foto depan bisa diganti</span></button>
+          </div>
+            <label class="spectrum-toggle-row" for="spectrum-toggle"><span><strong>Audio spectrum</strong><small>Tampilkan gelombang audio di player</small></span><input id="spectrum-toggle" type="checkbox" aria-label="Tampilkan audio spectrum" /></label>
+          </div>
+
+          <div id="carousel-controls" class="carousel-controls" hidden>
+            <div class="carousel-range"><label for="carousel-depth"><span>Kedalaman carousel</span><output id="carousel-depth-value">58%</output></label><input id="carousel-depth" type="range" min="0" max="100" value="58" aria-label="Kedalaman carousel" /></div>
+            <div class="carousel-range"><label for="background-intensity"><span>Intensitas background</span><output id="background-intensity-value">68%</output></label><input id="background-intensity" type="range" min="0" max="100" value="68" aria-label="Intensitas background" /></div>
+          </div>
+
+          <div class="design-group quality-group"><div class="field-label-row"><span class="group-label">Kualitas video</span><span class="label-hint">ENCODER BROWSER</span></div><div class="quality-options" role="group" aria-label="Kualitas video">
+            <button type="button" data-quality="fast" class="quality-option" aria-pressed="false"><b>Cepat</b><small>Ukuran lebih kecil</small></button>
+            <button type="button" data-quality="balanced" class="quality-option selected" aria-pressed="true"><b>Seimbang</b><small>Disarankan</small></button>
+            <button type="button" data-quality="high" class="quality-option" aria-pressed="false"><b>Tinggi</b><small>Detail maksimal</small></button>
+          </div><p class="mode-description">Video dan audio dikodekan offline di browser melalui WebCodecs.</p></div>
+
+          <div class="design-group export-group"><div class="field-label-row"><span class="group-label">Resolusi ekspor</span><span class="label-hint">MP4 · H.264</span></div><div class="resolution-options" role="group" aria-label="Resolusi video"><button type="button" data-resolution="720" class="resolution-option"><span class="radio-dot"></span><span><strong>720 px</strong><small>HD · render lebih ringan</small></span></button><button type="button" data-resolution="1080" class="resolution-option selected"><span class="radio-dot"></span><span><strong>1080 px</strong><small>Full HD · detail maksimal</small></span></button></div></div>
+          <div class="export-footnote"><span class="shield-icon">⌑</span><span>Media tetap di perangkat. Maks. audio 10 menit / 60 MB.</span></div>
+          <button id="render-button" class="render-button" type="button" disabled><span class="render-button-icon">▣</span><span>Render MP4 lokal</span><span class="button-arrow">→</span></button>
+          <p id="memory-warning" class="memory-warning" role="status" hidden></p>
+          <p id="render-error" class="field-error render-error" role="alert" hidden></p>
+        </aside>
+      </section>
+
+      <section class="results-grid" aria-label="Status dan hasil render">
+        <div class="panel progress-panel"><div class="panel-heading compact-heading"><div><span class="section-index">05</span><h2>Proses render</h2></div><div class="render-status-actions"><button id="cancel-render" class="cancel-render" type="button" hidden>Batalkan</button><span id="render-state-badge" class="state-badge idle">SIAP</span></div></div>
+          <div class="progress-content"><div class="progress-ring" id="progress-ring" role="progressbar" aria-label="Progres render" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="ring-track" cx="40" cy="40" r="34"></circle><circle id="ring-progress" class="ring-progress" cx="40" cy="40" r="34"></circle></svg><strong id="progress-percent">0%</strong></div><div class="progress-info"><strong id="progress-title">Siap membuat video</strong><span id="progress-description">Pilih cover dan audio untuk memulai.</span><div class="progress-track"><span id="linear-progress"></span></div><small id="progress-detail">MP4 · H.264 + AAC</small></div></div>
+        </div>
+        <div class="panel result-panel"><div class="panel-heading compact-heading"><div><span class="section-index">06</span><h2>Hasil video</h2></div><span id="result-state" class="result-state">BELUM ADA</span></div>
+          <div id="result-empty" class="result-empty"><span class="result-placeholder-icon">▷</span><div><strong>Hasil ekspor akan muncul di sini</strong><span>Video MP4 dengan audio terpotong dan visual pilihan Anda.</span></div></div>
+          <div id="result-content" class="result-content" hidden><video id="output-video" controls playsinline preload="metadata" aria-label="Preview video MP4 hasil render"></video><div class="result-details"><strong id="output-filename"></strong><span id="output-meta"></span><div class="result-actions"><a id="download-button" class="download-button" href="#" download><span aria-hidden="true">↓</span> Download MP4</a><span class="success-label"><i>✓</i>Siap</span></div></div></div>
+        </div>
+      </section>
+
+      <footer id="how-it-works" class="page-footer"><span><span class="footer-mark">♫</span> SonicFrame <i>·</i> Musik Anda, visual Anda.</span><span>Audio diproses lokal di perangkat ini.</span></footer>
+      <audio id="source-audio" preload="metadata"></audio>
+    </main>
+  </body>
+</html>
