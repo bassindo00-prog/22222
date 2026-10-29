@@ -115,6 +115,7 @@
             <button type="button" data-template="minimal" class="template-option selected" aria-pressed="true"><span class="template-preview minimal-preview"><span class="mini-cover"></span><span class="mini-lines"><i></i><i></i><i></i></span><span class="mini-controls"><i></i><i></i><i></i></span></span><b>Minimal Player</b><span>Player iPhone yang sekarang</span></button>
             <button type="button" data-template="spotify" class="template-option" aria-pressed="false"><span class="template-preview spotify-preview"><span class="spotify-mini-card far"></span><span class="spotify-mini-card side"></span><span class="spotify-mini-card selected"></span><span class="spotify-mini-card side right"></span><span class="spotify-mini-bar"></span></span><b>Spotify Carousel</b><span>Cover carousel dan floating player</span></button>
               <button type="button" data-template="glass" class="template-option" aria-pressed="false"><span class="template-preview glass-preview"><span class="glass-mini-glow"></span><span class="glass-mini-card"><span class="glass-mini-art"></span><span class="glass-mini-lines"><i></i><i></i></span><span class="glass-mini-badge"></span><span class="glass-mini-bar"></span></span></span><b>Glass Music Player</b><span>Glassmorphism player dengan blue glow</span></button>
+              <button type="button" data-template="purple-glass" class="template-option" aria-pressed="false"><span class="template-preview purple-preview"><span class="purple-mini-glow"></span><span class="purple-mini-panel"><span class="purple-mini-top"><span class="purple-mini-pill"></span><span class="purple-mini-dot"></span><span class="purple-mini-dot"></span></span><span class="purple-mini-card"><span class="purple-mini-art"></span><span class="purple-mini-lines"><i></i><i></i></span></span></span></span><b>Purple Glass</b><span>Control Center & scrolling text</span></button>
           </div>
             <label class="spectrum-toggle-row" for="spectrum-toggle"><span><strong>Audio spectrum</strong><small>Tampilkan gelombang audio di player</small></span><input id="spectrum-toggle" type="checkbox" aria-label="Tampilkan audio spectrum" /></label>
           </div>
@@ -148,6 +149,36 @@
             <div class="glass-range"><label for="glass-opacity"><span>Opacity Glass Card</span><output id="glass-opacity-value">70%</output></label><input id="glass-opacity" type="range" min="10" max="100" value="70" aria-label="Opacity Glass Card" /></div>
             <div class="glass-range"><label for="glass-blur"><span>Blur Background</span><output id="glass-blur-value">60%</output></label><input id="glass-blur" type="range" min="0" max="100" value="60" aria-label="Blur Background" /></div>
             <label class="spectrum-toggle-row" for="verified-badge-toggle"><span><strong>Verification Badge</strong><small>Tampilkan tanda centang biru pada card</small></span><input id="verified-badge-toggle" type="checkbox" checked aria-label="Tampilkan Verification Badge" /></label>
+          </div>
+
+          <div id="purple-glass-controls" class="glass-controls purple-controls" hidden>
+            <div class="field-label-row"><span class="group-label">Pengaturan Purple Glass</span><span class="label-hint">CONTROL CENTER</span></div>
+
+            <div class="glass-upload-box">
+              <div class="field-label-row"><span class="field-label">Custom Background</span><span class="label-hint">JPG · PNG · WEBP</span></div>
+              <div id="purple-bg-drop" class="custom-bg-drop purple-bg-drop" tabindex="0" role="button" aria-label="Upload background kustom">
+                <input id="purple-bg-input" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden" />
+                <div id="purple-bg-empty" class="custom-bg-empty">
+                  <span class="upload-glyph">⌑</span>
+                  <span><strong>Upload background</strong> atau drag & drop</span>
+                  <small>Maks. 20 MB · aspect fill otomatis</small>
+                </div>
+                <div id="purple-bg-filled" class="custom-bg-filled" hidden>
+                  <img id="purple-bg-thumb" alt="Preview background kustom" />
+                  <div>
+                    <strong id="purple-bg-name">background.jpg</strong>
+                    <small id="purple-bg-size"></small>
+                  </div>
+                  <button id="purple-bg-remove" class="icon-button" type="button" aria-label="Hapus background kustom">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-range"><label for="purple-glow"><span>Intensitas Ambient Glow</span><output id="purple-glow-value">80%</output></label><input id="purple-glow" type="range" min="0" max="100" value="80" aria-label="Intensitas Ambient Glow" /></div>
+            <div class="glass-range"><label for="purple-opacity"><span>Opacity Glass Panel</span><output id="purple-opacity-value">75%</output></label><input id="purple-opacity" type="range" min="10" max="100" value="75" aria-label="Opacity Glass Panel" /></div>
+            <div class="glass-range"><label for="marquee-speed"><span>Kecepatan Marquee</span><output id="marquee-speed-value">45 px/s</output></label><input id="marquee-speed" type="range" min="20" max="90" value="45" aria-label="Kecepatan Marquee" /></div>
+
+            <label class="spectrum-toggle-row" for="marquee-toggle"><span><strong>Scrolling Text (Marquee)</strong><small>Otomatis geser judul & nama artis panjang</small></span><input id="marquee-toggle" type="checkbox" checked aria-label="Aktifkan Scrolling Text" /></label>
           </div>
 
           <div class="design-group quality-group"><div class="field-label-row"><span class="group-label">Kualitas video</span><span class="label-hint">ENCODER BROWSER</span></div><div class="quality-options" role="group" aria-label="Kualitas video">

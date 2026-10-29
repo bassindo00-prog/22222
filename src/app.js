@@ -11,6 +11,7 @@ const refs = {
   colorRow: $('#color-row'), color: $('#background-color'), colorValue: $('#color-value'), coverBackgroundLabel: $('#cover-background-label'), spectrumToggle: $('#spectrum-toggle'), carouselControls: $('#carousel-controls'), carouselDepth: $('#carousel-depth'), carouselDepthValue: $('#carousel-depth-value'), backgroundIntensity: $('#background-intensity'), backgroundIntensityValue: $('#background-intensity-value'),
   glassControls: $('#glass-controls'), blueGlow: $('#blue-glow'), blueGlowValue: $('#blue-glow-value'), glassOpacity: $('#glass-opacity'), glassOpacityValue: $('#glass-opacity-value'), glassBlur: $('#glass-blur'), glassBlurValue: $('#glass-blur-value'), verifiedBadgeToggle: $('#verified-badge-toggle'),
   customBgInput: $('#custom-bg-input'), customBgDrop: $('#custom-bg-drop'), customBgEmpty: $('#custom-bg-empty'), customBgFilled: $('#custom-bg-filled'), customBgThumb: $('#custom-bg-thumb'), customBgName: $('#custom-bg-name'), customBgSize: $('#custom-bg-size'), customBgRemove: $('#custom-bg-remove'),
+  purpleControls: $('#purple-glass-controls'), purpleBgInput: $('#purple-bg-input'), purpleBgDrop: $('#purple-bg-drop'), purpleBgEmpty: $('#purple-bg-empty'), purpleBgFilled: $('#purple-bg-filled'), purpleBgThumb: $('#purple-bg-thumb'), purpleBgName: $('#purple-bg-name'), purpleBgSize: $('#purple-bg-size'), purpleBgRemove: $('#purple-bg-remove'), purpleGlow: $('#purple-glow'), purpleGlowValue: $('#purple-glow-value'), purpleOpacity: $('#purple-opacity'), purpleOpacityValue: $('#purple-opacity-value'), marqueeSpeed: $('#marquee-speed'), marqueeSpeedValue: $('#marquee-speed-value'), marqueeToggle: $('#marquee-toggle'),
   renderButton: $('#render-button'), cancelRender: $('#cancel-render'), memoryWarning: $('#memory-warning'), renderError: $('#render-error'), stateBadge: $('#render-state-badge'), progressRing: $('#progress-ring'), ringProgress: $('#ring-progress'), progressPercent: $('#progress-percent'), progressTitle: $('#progress-title'), progressDescription: $('#progress-description'), linearProgress: $('#linear-progress'), progressDetail: $('#progress-detail'), resultState: $('#result-state'), resultEmpty: $('#result-empty'), resultContent: $('#result-content'), outputVideo: $('#output-video'), outputFilename: $('#output-filename'), outputMeta: $('#output-meta'), download: $('#download-button')
 };
 
@@ -19,6 +20,7 @@ const state = {
   foregroundFile: null, foregroundUrl: null, foregroundSeq: 0, foregroundX: .58, foregroundY: .62, foregroundScale: 1,
   ratio: 'portrait', ratioBeforeModel: null, resolution: 1080, quality: 'balanced', background: 'blur', color: '#111116', template: 'minimal', spectrumEnabled: false, carouselDepth: 58, backgroundIntensity: 68, current: 0, playing: false, volume: .8,
   blueGlow: 75, glassOpacity: 70, glassBlur: 60, verifiedBadge: true, glassTag: '+ Creativestyle', customBackgroundFile: null, customBackgroundUrl: null,
+  purpleGlow: 80, purpleGlassOpacity: 75, marqueeEnabled: true, marqueeSpeed: 45, focusTitle: 'Temps', focusSubtitle: 'pour soi',
   audioContext: null, analyser: null, gain: null, sourceNode: null, frequency: null, rendering: false, renderWorker: null, cancelRenderReject: null, workerWaiters: null, outputUrl: null, cancelRequested: false,
   coverSeq: 0, titleEdited: false, artistEdited: false, albumEdited: false
 };
@@ -30,6 +32,8 @@ const player = new PlayerRenderer(refs.canvas, () => ({
   spectrumEnabled: state.spectrumEnabled, carouselDepth: state.carouselDepth, backgroundIntensity: state.backgroundIntensity,
   blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
   verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
+    purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
+  purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
   progress: state.duration ? Math.max(0, Math.min(1, (refs.audio ? refs.audio.currentTime - state.trimStart : state.current - state.trimStart) / (state.trimEnd - state.trimStart || 1))) : 0,
   current: Math.max(0, (refs.audio?.currentTime ?? state.current) - state.trimStart), duration: Math.max(0, state.trimEnd - state.trimStart),
   playing: state.playing, volume: state.volume
@@ -761,6 +765,7 @@ refs.coverInput.addEventListener('change', () => loadImageFile(refs.coverInput.f
 refs.coverChange.addEventListener('click', (event) => { event.stopPropagation(); refs.coverInput.click(); });
 refs.coverRemove.addEventListener('click', (event) => { event.stopPropagation(); removeCover(); });
 if (refs.customBgDrop && refs.customBgInput) { dropZones.push([refs.customBgDrop, refs.customBgInput, loadCustomBackgroundFile]); }
+if (refs.purpleBgDrop && refs.purpleBgInput) { dropZones.push([refs.purpleBgDrop, refs.purpleBgInput, loadCustomBackgroundFile]); }
 if (refs.foregroundDrop && refs.foregroundInput) {
   refs.foregroundDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.foregroundInput.click(); });
   refs.foregroundDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.foregroundInput.click(); } });
@@ -974,4 +979,50 @@ if (refs.verifiedBadgeToggle) {
 }
 if (refs.canvas) {
   refs.canvas.addEventListener('click', () => togglePlayback());
+}
+
+if (refs.purpleBgDrop && refs.purpleBgInput) {
+  refs.purpleBgDrop.addEventListener('click', (event) => {
+    if (!event.target.closest('button')) refs.purpleBgInput.click();
+  });
+  refs.purpleBgDrop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      refs.purpleBgInput.click();
+    }
+  });
+  refs.purpleBgInput.addEventListener('change', () => loadCustomBackgroundFile(refs.purpleBgInput.files?.[0]));
+}
+if (refs.purpleBgRemove) {
+  refs.purpleBgRemove.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeCustomBackground();
+  });
+}
+if (refs.purpleGlow) {
+  refs.purpleGlow.addEventListener('input', () => {
+    state.purpleGlow = Number(refs.purpleGlow.value);
+    if (refs.purpleGlowValue) refs.purpleGlowValue.textContent = `${state.purpleGlow}%`;
+    player.draw();
+  });
+}
+if (refs.purpleOpacity) {
+  refs.purpleOpacity.addEventListener('input', () => {
+    state.purpleGlassOpacity = Number(refs.purpleOpacity.value);
+    if (refs.purpleOpacityValue) refs.purpleOpacityValue.textContent = `${state.purpleGlassOpacity}%`;
+    player.draw();
+  });
+}
+if (refs.marqueeSpeed) {
+  refs.marqueeSpeed.addEventListener('input', () => {
+    state.marqueeSpeed = Number(refs.marqueeSpeed.value);
+    if (refs.marqueeSpeedValue) refs.marqueeSpeedValue.textContent = `${state.marqueeSpeed} px/s`;
+    player.draw();
+  });
+}
+if (refs.marqueeToggle) {
+  refs.marqueeToggle.addEventListener('change', () => {
+    state.marqueeEnabled = refs.marqueeToggle.checked;
+    player.draw();
+  });
 }

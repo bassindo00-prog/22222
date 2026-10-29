@@ -47,7 +47,9 @@ test('production app serves only its local client renderer and static assets', a
     assert.match(html, /Spotify Carousel/);
     assert.match(html, /Minimal Player/);
     assert.match(html, /Glass Music Player/);
+    assert.match(html, /Purple Glass/);
     assert.match(html, /glass-controls/);
+    assert.match(html, /purple-glass-controls/);
     assert.doesNotMatch(html, /iPhone Model/);
     assert.match(html, /carousel-depth/);
     assert.match(html, /background-intensity/);

@@ -191,6 +191,43 @@ function fitText(ctx, text, maxWidth, font, fallback = '') {
   return `${trimmed}…`;
 }
 
+function drawMarqueeText(ctx, text, boxX, boxY, boxW, boxH, font, color, time, { speed = 45, enableMarquee = true, pauseTime = 1.8 } = {}) {
+  const value = String(text || '');
+  if (!value) return;
+  ctx.save();
+  ctx.font = font;
+  const textW = ctx.measureText(value).width;
+  ctx.beginPath();
+  ctx.rect(boxX, boxY, boxW, boxH);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  if (textW <= boxW || !enableMarquee) {
+    ctx.fillText(value, boxX, boxY + boxH / 2);
+    ctx.restore();
+    return;
+  }
+
+  const overflow = textW - boxW;
+  const scrollDuration = overflow / speed;
+  const cycle = scrollDuration + pauseTime * 2;
+  const t = Math.max(0, time) % cycle;
+
+  let offset = 0;
+  if (t < pauseTime) {
+    offset = 0;
+  } else if (t < pauseTime + scrollDuration) {
+    offset = (t - pauseTime) * speed;
+  } else {
+    offset = overflow;
+  }
+
+  ctx.fillText(value, boxX - offset, boxY + boxH / 2);
+  ctx.restore();
+}
+
 export class PlayerRenderer {
   constructor(canvas, getState) {
     this.canvas = canvas;
@@ -491,6 +528,10 @@ export class PlayerRenderer {
     if (!W || !H) return;
     ctx.clearRect(0, 0, W, H);
 
+    if (s.template === 'purple-glass') {
+      this.drawPurpleGlass(s, W, H);
+      return;
+    }
     if (s.template === 'glass') {
       this.drawGlass(s, W, H);
       return;
@@ -1340,4 +1381,409 @@ export class PlayerRenderer {
     }
     ctx.restore();
   }
+
+  drawPurpleGlass(s, W, H, time = 0) {
+    const ctx = this.ctx;
+    const portrait = H > W * 1.2;
+    const landscape = W > H * 1.25;
+    const nowTime = time || (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
+    const scrollTime = s.offline ? (s.current || 0) : nowTime;
+    const purpleGlow = clamp((s.purpleGlow ?? 80) / 100, 0, 1);
+    const glassOpacity = clamp((s.purpleGlassOpacity ?? 75) / 100, 0.1, 1);
+    const glowPulse = 1 + Math.sin(nowTime * 0.75) * 0.05;
+
+    // 1. Background
+    if (this.customBackground) {
+      cropImage(ctx, this.customBackground, 0, 0, W, H, 0);
+      ctx.fillStyle = 'rgba(25, 10, 40, 0.42)';
+      ctx.fillRect(0, 0, W, H);
+    } else if (s.background === 'blur' && this.image?.complete && this.image.naturalWidth) {
+      cropImage(ctx, this.image, 0, 0, W, H, 0);
+      ctx.fillStyle = 'rgba(32, 12, 50, 0.75)';
+      ctx.fillRect(0, 0, W, H);
+    } else if (s.background === 'solid') {
+      ctx.fillStyle = s.color || '#24143d';
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, '#211239');
+      bgGrad.addColorStop(0.24, '#3b1958');
+      bgGrad.addColorStop(0.46, '#5a226d');
+      bgGrad.addColorStop(0.68, '#8e3266');
+      bgGrad.addColorStop(0.85, '#bf4749');
+      bgGrad.addColorStop(1, '#db6235');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Warm Sunset & Violet Ambient Glow Orbs
+    if (purpleGlow > 0.01) {
+      const topOrb = ctx.createRadialGradient(W * 0.25, H * 0.18, 0, W * 0.25, H * 0.18, Math.min(W, H) * 0.65);
+      topOrb.addColorStop(0, `rgba(168, 85, 247, ${0.28 * purpleGlow * glowPulse})`);
+      topOrb.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = topOrb;
+      ctx.fillRect(0, 0, W, H);
+
+      const botOrb = ctx.createRadialGradient(W * 0.5, H * 0.95, 0, W * 0.5, H * 0.95, Math.min(W, H) * 0.70);
+      botOrb.addColorStop(0, `rgba(249, 115, 22, ${0.40 * purpleGlow * glowPulse})`);
+      botOrb.addColorStop(0.45, `rgba(225, 29, 72, ${0.22 * purpleGlow})`);
+      botOrb.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = botOrb;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 2. Main Glass Panel Container
+    const panelW = Math.min(W * (portrait ? 0.88 : landscape ? 0.48 : 0.80), 840);
+    const panelH = panelW * 0.80;
+    const panelX = (W - panelW) / 2;
+    const panelY = H * (portrait ? 0.50 : 0.50) - panelH / 2;
+    const panelR = panelW * 0.085;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    ctx.shadowBlur = panelW * 0.09;
+    ctx.shadowOffsetY = panelW * 0.038;
+    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fill();
+    ctx.restore();
+
+    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.fillStyle = `rgba(65, 28, 92, ${0.40 * glassOpacity})`;
+    ctx.fill();
+
+    const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
+    panelGrad.addColorStop(0, `rgba(255, 255, 255, ${0.18 * glassOpacity})`);
+    panelGrad.addColorStop(0.35, `rgba(255, 255, 255, ${0.06 * glassOpacity})`);
+    panelGrad.addColorStop(0.85, `rgba(255, 255, 255, ${0.03 * glassOpacity})`);
+    panelGrad.addColorStop(1, `rgba(255, 255, 255, ${0.12 * glassOpacity})`);
+    ctx.fillStyle = panelGrad;
+    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.fill();
+
+    const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
+    borderGrad.addColorStop(0, 'rgba(232, 195, 255, 0.48)');
+    borderGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.22)');
+    borderGrad.addColorStop(1, 'rgba(216, 180, 254, 0.38)');
+    ctx.strokeStyle = borderGrad;
+    ctx.lineWidth = Math.max(1.5, panelW * 0.0028);
+    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.stroke();
+
+    // 3. Top Section (Focus Pill + Flashlight Circle + Airplane Circle)
+    const pad = panelW * 0.065;
+    const topRowH = panelH * 0.26;
+    const topRowY = panelY + pad;
+
+    // A. Focus Pill (Left)
+    const capsuleW = (panelW - pad * 2) * 0.48;
+    const capsuleH = topRowH;
+    const capsuleR = capsuleH / 2;
+    const capsuleX = panelX + pad;
+
+    roundedRect(ctx, capsuleX, topRowY, capsuleW, capsuleH, capsuleR);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.12 * glassOpacity})`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 1;
+    roundedRect(ctx, capsuleX, topRowY, capsuleW, capsuleH, capsuleR);
+    ctx.stroke();
+
+    const moonR = capsuleH * 0.36;
+    const moonCenterX = capsuleX + capsuleR;
+    const moonCenterY = topRowY + capsuleH / 2;
+    ctx.beginPath();
+    ctx.arc(moonCenterX, moonCenterY, moonR, 0, Math.PI * 2);
+    ctx.fillStyle = '#4c2075';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(moonCenterX, moonCenterY, moonR * 0.62, 0.4, 4.2);
+    ctx.bezierCurveTo(moonCenterX - moonR * 0.1, moonCenterY - moonR * 0.2, moonCenterX - moonR * 0.1, moonCenterY + moonR * 0.2, moonCenterX + moonR * 0.62 * Math.cos(0.4), moonCenterY + moonR * 0.62 * Math.sin(0.4));
+    ctx.fill();
+    ctx.restore();
+
+    const fTextX = moonCenterX + moonR + capsuleH * 0.18;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `600 ${capsuleH * 0.26}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.focusTitle || 'Temps', fTextX, topRowY + capsuleH * 0.38);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.74)';
+    ctx.font = `400 ${capsuleH * 0.22}px sans-serif`;
+    ctx.fillText(s.focusSubtitle || 'pour soi', fTextX, topRowY + capsuleH * 0.66);
+
+    const chevX = capsuleX + capsuleW - capsuleH * 0.35;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = Math.max(1.5, capsuleH * 0.035);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(chevX - 4, moonCenterY - 4);
+    ctx.lineTo(chevX, moonCenterY - 7);
+    ctx.lineTo(chevX + 4, moonCenterY - 4);
+    ctx.moveTo(chevX - 4, moonCenterY + 4);
+    ctx.lineTo(chevX, moonCenterY + 7);
+    ctx.lineTo(chevX + 4, moonCenterY + 4);
+    ctx.stroke();
+
+    // B. Flashlight Button (Middle)
+    const btnD = capsuleH;
+    const btnR = btnD / 2;
+    const remainingW = (panelW - pad * 2) - capsuleW;
+    const btnGap = (remainingW - btnD * 2) / 3;
+    const btn1X = capsuleX + capsuleW + btnGap + btnR;
+    const btn1Y = topRowY + btnR;
+
+    ctx.beginPath();
+    ctx.arc(btn1X, btn1Y, btnR, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(132, 54, 88, ${0.48 * glassOpacity})`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    this.drawFlashlightIcon(ctx, btn1X, btn1Y, btnR * 0.50);
+
+    // C. Airplane Mode Button (Right)
+    const btn2X = btn1X + btnR + btnGap + btnR;
+    const btn2Y = btn1Y;
+
+    ctx.beginPath();
+    ctx.arc(btn2X, btn2Y, btnR, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(146, 114, 172, ${0.48 * glassOpacity})`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    this.drawAirplaneIcon(ctx, btn2X, btn2Y, btnR * 0.52);
+
+    // 4. Bottom Section (Music Player Card)
+    const musicCardX = panelX + pad;
+    const musicCardY = topRowY + topRowH + panelH * 0.055;
+    const musicCardW = panelW - pad * 2;
+    const musicCardH = panelH - (topRowH + panelH * 0.055) - pad * 2;
+    const musicCardR = panelW * 0.06;
+
+    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
+    ctx.fillStyle = `rgba(45, 18, 68, ${0.48 * glassOpacity})`;
+    ctx.fill();
+
+    const musicGrad = ctx.createLinearGradient(musicCardX, musicCardY, musicCardX + musicCardW, musicCardY + musicCardH);
+    musicGrad.addColorStop(0, `rgba(255, 255, 255, ${0.22 * glassOpacity})`);
+    musicGrad.addColorStop(0.3, `rgba(255, 255, 255, ${0.06 * glassOpacity})`);
+    musicGrad.addColorStop(0.8, `rgba(255, 255, 255, ${0.02 * glassOpacity})`);
+    musicGrad.addColorStop(1, `rgba(255, 255, 255, ${0.14 * glassOpacity})`);
+    ctx.fillStyle = musicGrad;
+    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(216, 180, 254, 0.35)';
+    ctx.lineWidth = Math.max(1, musicCardW * 0.002);
+    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
+    ctx.stroke();
+
+    const mPad = musicCardW * 0.055;
+    const artSize = musicCardH - mPad * 2;
+    const artX = musicCardX + mPad;
+    const artY = musicCardY + mPad;
+    const artR = artSize * 0.16;
+
+    if (this.image?.complete && this.image.naturalWidth) {
+      cropImage(ctx, this.image, artX, artY, artSize, artSize, artR);
+    } else {
+      ctx.save();
+      roundedRect(ctx, artX, artY, artSize, artSize, artR);
+      ctx.clip();
+      ctx.fillStyle = '#34154c';
+      ctx.fillRect(artX, artY, artSize, artSize);
+      ctx.fillStyle = '#d8b4fe';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${artSize * 0.40}px sans-serif`;
+      ctx.fillText('♫', artX + artSize / 2, artY + artSize / 2);
+      ctx.restore();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 1;
+    roundedRect(ctx, artX, artY, artSize, artSize, artR);
+    ctx.stroke();
+
+    const rightX = artX + artSize + mPad * 0.85;
+    const badgeW = artSize * 0.32;
+    const badgeH = artSize * 0.44;
+    const badgeX = musicCardX + musicCardW - mPad - badgeW;
+    const badgeY = artY + artSize * 0.04;
+
+    roundedRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeW * 0.45);
+    ctx.fillStyle = 'rgba(147, 95, 212, 0.36)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1;
+    roundedRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeW * 0.45);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(badgeX + badgeW / 2, badgeY + badgeH * 0.38, badgeW * 0.10, 0, Math.PI * 2);
+    ctx.arc(badgeX + badgeW / 2, badgeY + badgeH * 0.62, badgeW * 0.10, 0, Math.PI * 2);
+    ctx.fill();
+
+    const marqueeOpts = {
+      speed: s.marqueeSpeed || 45,
+      enableMarquee: s.marqueeEnabled !== false,
+      pauseTime: 1.8
+    };
+
+    const textBoxW = badgeX - rightX - mPad * 0.4;
+    const titleH = artSize * 0.28;
+    const titleY = artY + artSize * 0.06;
+    drawMarqueeText(
+      ctx,
+      s.title || 'Hold On',
+      rightX,
+      titleY,
+      textBoxW,
+      titleH,
+      `700 ${artSize * 0.26}px sans-serif`,
+      '#ffffff',
+      scrollTime,
+      marqueeOpts
+    );
+
+    const artistH = artSize * 0.24;
+    const artistY = titleY + titleH + artSize * 0.02;
+    drawMarqueeText(
+      ctx,
+      s.artist || 'Kygo & Emmit Fenn',
+      rightX,
+      artistY,
+      textBoxW,
+      artistH,
+      `500 ${artSize * 0.22}px sans-serif`,
+      'rgba(216, 180, 254, 0.85)',
+      scrollTime,
+      marqueeOpts
+    );
+
+    const ctrlW = musicCardX + musicCardW - mPad - rightX;
+    const ctrlCenterX = rightX + ctrlW * 0.45;
+    const ctrlCenterY = artistY + artistH + artSize * 0.24;
+    const ctrlSpacing = artSize * 0.38;
+
+    this.drawPurpleControls(ctx, ctrlCenterX, ctrlCenterY, ctrlSpacing, artSize * 0.18, s.playing);
+
+    const trackX = rightX;
+    const trackW = musicCardX + musicCardW - mPad - rightX;
+    const trackH = Math.max(3.5, musicCardW * 0.007);
+    const trackY = artY + artSize - trackH;
+
+    roundedRect(ctx, trackX, trackY, trackW, trackH, trackH / 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fill();
+
+    const prog = clamp(s.duration > 0 ? (s.current / s.duration) : (s.progress || 0), 0, 1);
+    const fillW = Math.max(trackH, trackW * prog);
+
+    roundedRect(ctx, trackX, trackY, fillW, trackH, trackH / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+    ctx.shadowBlur = trackH * 2;
+    ctx.beginPath();
+    ctx.arc(trackX + fillW, trackY + trackH / 2, trackH * 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawFlashlightIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-0.75);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.45, -size * 0.7);
+    ctx.lineTo(size * 0.45, -size * 0.7);
+    ctx.lineTo(size * 0.25, -size * 0.3);
+    ctx.lineTo(-size * 0.25, -size * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(-size * 0.22, -size * 0.3, size * 0.44, size * 0.95);
+    ctx.restore();
+  }
+
+  drawAirplaneIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-0.75);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.9);
+    ctx.lineTo(size * 0.16, -size * 0.2);
+    ctx.lineTo(size * 0.85, size * 0.15);
+    ctx.lineTo(size * 0.75, size * 0.32);
+    ctx.lineTo(size * 0.16, size * 0.18);
+    ctx.lineTo(size * 0.14, size * 0.65);
+    ctx.lineTo(size * 0.45, size * 0.82);
+    ctx.lineTo(size * 0.40, size * 0.95);
+    ctx.lineTo(0, size * 0.85);
+    ctx.lineTo(-size * 0.40, size * 0.95);
+    ctx.lineTo(-size * 0.45, size * 0.82);
+    ctx.lineTo(-size * 0.14, size * 0.65);
+    ctx.lineTo(-size * 0.16, size * 0.18);
+    ctx.lineTo(-size * 0.75, size * 0.32);
+    ctx.lineTo(-size * 0.85, size * 0.15);
+    ctx.lineTo(-size * 0.16, -size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawPurpleControls(ctx, cx, cy, spacing, iconSize, playing) {
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    const s = iconSize;
+
+    const pX = cx - spacing;
+    ctx.beginPath();
+    ctx.fillRect(pX - s * 0.7, cy - s * 0.6, s * 0.25, s * 1.2);
+    ctx.moveTo(pX + s * 0.6, cy - s * 0.6);
+    ctx.lineTo(pX - s * 0.35, cy);
+    ctx.lineTo(pX + s * 0.6, cy + s * 0.6);
+    ctx.closePath();
+    ctx.fill();
+
+    if (playing) {
+      const bw = s * 0.28;
+      ctx.fillRect(cx - s * 0.4, cy - s * 0.65, bw, s * 1.3);
+      ctx.fillRect(cx + s * 0.15, cy - s * 0.65, bw, s * 1.3);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(cx - s * 0.35, cy - s * 0.65);
+      ctx.lineTo(cx + s * 0.6, cy);
+      ctx.lineTo(cx - s * 0.35, cy + s * 0.65);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    const nX = cx + spacing;
+    ctx.beginPath();
+    ctx.moveTo(nX - s * 0.6, cy - s * 0.6);
+    ctx.lineTo(nX + s * 0.35, cy);
+    ctx.lineTo(nX - s * 0.6, cy + s * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(nX + s * 0.45, cy - s * 0.6, s * 0.25, s * 1.2);
+
+    ctx.restore();
+  }
+
 }
