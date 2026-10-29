@@ -41,7 +41,7 @@ test('production app serves only its local client renderer and static assets', a
 
     const page = await waitForServer();
     const html = await page.text();
-    assert.match(html, /SonicFrame/);
+    assert.match(html, /BREAKOUT ID/);
     assert.match(html, /Kualitas video/);
     assert.match(html, /Media tetap di perangkat/);
     assert.match(html, /Spotify Carousel/);
