@@ -1467,168 +1467,56 @@ export class PlayerRenderer {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // 2. Main Glass Panel Container
-    const panelW = Math.min(W * (portrait ? 0.88 : landscape ? 0.48 : 0.80), 840);
-    const panelH = panelW * 0.80;
-    const panelX = (W - panelW) / 2;
-    const panelY = H * (portrait ? 0.50 : 0.50) - panelH / 2;
-    const panelR = panelW * 0.085;
+    // 2. Main Liquid Glass Music Player Card (Centered)
+    const cardW = Math.min(W * (portrait ? 0.88 : landscape ? 0.52 : 0.82), 860);
+    const cardH = cardW * 0.46;
+    const cardX = (W - cardW) / 2;
+    const cardY = (H - cardH) / 2;
+    const cardR = cardW * 0.075;
 
+    // Drop shadow
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
-    ctx.shadowBlur = panelW * 0.09;
-    ctx.shadowOffsetY = panelW * 0.038;
-    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.shadowBlur = cardW * 0.085;
+    ctx.shadowOffsetY = cardW * 0.035;
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.fill();
     ctx.restore();
 
-    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
-    ctx.fillStyle = `rgba(65, 28, 92, ${0.40 * glassOpacity})`;
+    // Dark purple liquid tint base
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
+    ctx.fillStyle = `rgba(50, 18, 76, ${0.45 * glassOpacity})`;
     ctx.fill();
 
-    const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
-    panelGrad.addColorStop(0, `rgba(255, 255, 255, ${0.18 * glassOpacity})`);
-    panelGrad.addColorStop(0.35, `rgba(255, 255, 255, ${0.06 * glassOpacity})`);
-    panelGrad.addColorStop(0.85, `rgba(255, 255, 255, ${0.03 * glassOpacity})`);
-    panelGrad.addColorStop(1, `rgba(255, 255, 255, ${0.12 * glassOpacity})`);
-    ctx.fillStyle = panelGrad;
-    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    // Frosted liquid glass gradient sheen
+    const glassGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    glassGrad.addColorStop(0, `rgba(255, 255, 255, ${0.22 * glassOpacity})`);
+    glassGrad.addColorStop(0.3, `rgba(255, 255, 255, ${0.06 * glassOpacity})`);
+    glassGrad.addColorStop(0.8, `rgba(255, 255, 255, ${0.02 * glassOpacity})`);
+    glassGrad.addColorStop(1, `rgba(255, 255, 255, ${0.14 * glassOpacity})`);
+    ctx.fillStyle = glassGrad;
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.fill();
 
-    const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
+    // Glowing purple border
+    const borderGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
     borderGrad.addColorStop(0, 'rgba(232, 195, 255, 0.48)');
     borderGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.22)');
     borderGrad.addColorStop(1, 'rgba(216, 180, 254, 0.38)');
     ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = Math.max(1.5, panelW * 0.0028);
-    roundedRect(ctx, panelX, panelY, panelW, panelH, panelR);
+    ctx.lineWidth = Math.max(1.5, cardW * 0.0028);
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.stroke();
 
-    // 3. Top Section (Focus Pill + Flashlight Circle + Airplane Circle)
-    const pad = panelW * 0.065;
-    const topRowH = panelH * 0.26;
-    const topRowY = panelY + pad;
-
-    // A. Focus Pill (Left)
-    const capsuleW = (panelW - pad * 2) * 0.48;
-    const capsuleH = topRowH;
-    const capsuleR = capsuleH / 2;
-    const capsuleX = panelX + pad;
-
-    roundedRect(ctx, capsuleX, topRowY, capsuleW, capsuleH, capsuleR);
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.12 * glassOpacity})`;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 1;
-    roundedRect(ctx, capsuleX, topRowY, capsuleW, capsuleH, capsuleR);
-    ctx.stroke();
-
-    const moonR = capsuleH * 0.36;
-    const moonCenterX = capsuleX + capsuleR;
-    const moonCenterY = topRowY + capsuleH / 2;
-    ctx.beginPath();
-    ctx.arc(moonCenterX, moonCenterY, moonR, 0, Math.PI * 2);
-    ctx.fillStyle = '#4c2075';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(moonCenterX, moonCenterY, moonR * 0.62, 0.4, 4.2);
-    ctx.bezierCurveTo(moonCenterX - moonR * 0.1, moonCenterY - moonR * 0.2, moonCenterX - moonR * 0.1, moonCenterY + moonR * 0.2, moonCenterX + moonR * 0.62 * Math.cos(0.4), moonCenterY + moonR * 0.62 * Math.sin(0.4));
-    ctx.fill();
-    ctx.restore();
-
-    const fTextX = moonCenterX + moonR + capsuleH * 0.18;
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `600 ${capsuleH * 0.26}px sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(s.focusTitle || 'Temps', fTextX, topRowY + capsuleH * 0.38);
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.74)';
-    ctx.font = `400 ${capsuleH * 0.22}px sans-serif`;
-    ctx.fillText(s.focusSubtitle || 'pour soi', fTextX, topRowY + capsuleH * 0.66);
-
-    const chevX = capsuleX + capsuleW - capsuleH * 0.35;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.lineWidth = Math.max(1.5, capsuleH * 0.035);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(chevX - 4, moonCenterY - 4);
-    ctx.lineTo(chevX, moonCenterY - 7);
-    ctx.lineTo(chevX + 4, moonCenterY - 4);
-    ctx.moveTo(chevX - 4, moonCenterY + 4);
-    ctx.lineTo(chevX, moonCenterY + 7);
-    ctx.lineTo(chevX + 4, moonCenterY + 4);
-    ctx.stroke();
-
-    // B. Flashlight Button (Middle)
-    const btnD = capsuleH;
-    const btnR = btnD / 2;
-    const remainingW = (panelW - pad * 2) - capsuleW;
-    const btnGap = (remainingW - btnD * 2) / 3;
-    const btn1X = capsuleX + capsuleW + btnGap + btnR;
-    const btn1Y = topRowY + btnR;
-
-    ctx.beginPath();
-    ctx.arc(btn1X, btn1Y, btnR, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(132, 54, 88, ${0.48 * glassOpacity})`;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    this.drawFlashlightIcon(ctx, btn1X, btn1Y, btnR * 0.50);
-
-    // C. Airplane Mode Button (Right)
-    const btn2X = btn1X + btnR + btnGap + btnR;
-    const btn2Y = btn1Y;
-
-    ctx.beginPath();
-    ctx.arc(btn2X, btn2Y, btnR, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(146, 114, 172, ${0.48 * glassOpacity})`;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    this.drawAirplaneIcon(ctx, btn2X, btn2Y, btnR * 0.52);
-
-    // 4. Bottom Section (Music Player Card)
-    const musicCardX = panelX + pad;
-    const musicCardY = topRowY + topRowH + panelH * 0.055;
-    const musicCardW = panelW - pad * 2;
-    const musicCardH = panelH - (topRowH + panelH * 0.055) - pad * 2;
-    const musicCardR = panelW * 0.06;
-
-    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
-    ctx.fillStyle = `rgba(45, 18, 68, ${0.48 * glassOpacity})`;
-    ctx.fill();
-
-    const musicGrad = ctx.createLinearGradient(musicCardX, musicCardY, musicCardX + musicCardW, musicCardY + musicCardH);
-    musicGrad.addColorStop(0, `rgba(255, 255, 255, ${0.22 * glassOpacity})`);
-    musicGrad.addColorStop(0.3, `rgba(255, 255, 255, ${0.06 * glassOpacity})`);
-    musicGrad.addColorStop(0.8, `rgba(255, 255, 255, ${0.02 * glassOpacity})`);
-    musicGrad.addColorStop(1, `rgba(255, 255, 255, ${0.14 * glassOpacity})`);
-    ctx.fillStyle = musicGrad;
-    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(216, 180, 254, 0.35)';
-    ctx.lineWidth = Math.max(1, musicCardW * 0.002);
-    roundedRect(ctx, musicCardX, musicCardY, musicCardW, musicCardH, musicCardR);
-    ctx.stroke();
-
-    const mPad = musicCardW * 0.055;
-    const artSize = musicCardH - mPad * 2;
-    const artX = musicCardX + mPad;
-    const artY = musicCardY + mPad;
+    // Inside elements
+    const mPad = cardW * 0.055;
+    const artSize = cardH - mPad * 2;
+    const artX = cardX + mPad;
+    const artY = cardY + mPad;
     const artR = artSize * 0.16;
 
+    // Album Artwork
     if (isImageDrawable(this.image)) {
       cropImage(ctx, this.image, artX, artY, artSize, artSize, artR);
     } else {
@@ -1649,10 +1537,11 @@ export class PlayerRenderer {
     roundedRect(ctx, artX, artY, artSize, artSize, artR);
     ctx.stroke();
 
+    // Airplay / device badge on the right
     const rightX = artX + artSize + mPad * 0.85;
-    const badgeW = artSize * 0.32;
-    const badgeH = artSize * 0.44;
-    const badgeX = musicCardX + musicCardW - mPad - badgeW;
+    const badgeW = artSize * 0.30;
+    const badgeH = artSize * 0.42;
+    const badgeX = cardX + cardW - mPad - badgeW;
     const badgeY = artY + artSize * 0.04;
 
     roundedRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeW * 0.45);
@@ -1675,9 +1564,11 @@ export class PlayerRenderer {
       pauseTime: 1.8
     };
 
-    const textBoxW = badgeX - rightX - mPad * 0.4;
-    const titleH = artSize * 0.28;
-    const titleY = artY + artSize * 0.06;
+    const textBoxW = badgeX - rightX - mPad * 0.35;
+
+    // Refined smaller font sizes for Title & Artist
+    const titleH = artSize * 0.20;
+    const titleY = artY + artSize * 0.05;
     drawMarqueeText(
       ctx,
       s.title || 'Hold On',
@@ -1685,14 +1576,14 @@ export class PlayerRenderer {
       titleY,
       textBoxW,
       titleH,
-      `700 ${artSize * 0.26}px sans-serif`,
+      `700 ${artSize * 0.17}px sans-serif`,
       '#ffffff',
       scrollTime,
       marqueeOpts
     );
 
-    const artistH = artSize * 0.24;
-    const artistY = titleY + titleH + artSize * 0.02;
+    const artistH = artSize * 0.16;
+    const artistY = titleY + titleH + artSize * 0.03;
     drawMarqueeText(
       ctx,
       s.artist || 'Kygo & Emmit Fenn',
@@ -1700,23 +1591,25 @@ export class PlayerRenderer {
       artistY,
       textBoxW,
       artistH,
-      `500 ${artSize * 0.22}px sans-serif`,
+      `500 ${artSize * 0.13}px sans-serif`,
       'rgba(216, 180, 254, 0.85)',
       scrollTime,
       marqueeOpts
     );
 
-    const ctrlW = musicCardX + musicCardW - mPad - rightX;
+    // Controls (Previous, Play/Pause, Next)
+    const ctrlW = cardX + cardW - mPad - rightX;
     const ctrlCenterX = rightX + ctrlW * 0.45;
-    const ctrlCenterY = artistY + artistH + artSize * 0.24;
-    const ctrlSpacing = artSize * 0.38;
+    const ctrlCenterY = artistY + artistH + artSize * 0.22;
+    const ctrlSpacing = artSize * 0.36;
 
-    this.drawPurpleControls(ctx, ctrlCenterX, ctrlCenterY, ctrlSpacing, artSize * 0.18, s.playing);
+    this.drawPurpleControls(ctx, ctrlCenterX, ctrlCenterY, ctrlSpacing, artSize * 0.17, s.playing);
 
+    // Progress bar
     const trackX = rightX;
-    const trackW = musicCardX + musicCardW - mPad - rightX;
-    const trackH = Math.max(3.5, musicCardW * 0.007);
-    const trackY = artY + artSize - trackH;
+    const trackW = cardX + cardW - mPad - rightX;
+    const trackH = Math.max(3.5, cardW * 0.007);
+    const trackY = artY + artSize - trackH - artSize * 0.02;
 
     roundedRect(ctx, trackX, trackY, trackW, trackH, trackH / 2);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
@@ -1735,49 +1628,6 @@ export class PlayerRenderer {
     ctx.beginPath();
     ctx.arc(trackX + fillW, trackY + trackH / 2, trackH * 0.9, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.restore();
-  }
-
-  drawFlashlightIcon(ctx, x, y, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(-0.75);
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.45, -size * 0.7);
-    ctx.lineTo(size * 0.45, -size * 0.7);
-    ctx.lineTo(size * 0.25, -size * 0.3);
-    ctx.lineTo(-size * 0.25, -size * 0.3);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillRect(-size * 0.22, -size * 0.3, size * 0.44, size * 0.95);
-    ctx.restore();
-  }
-
-  drawAirplaneIcon(ctx, x, y, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(-0.75);
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.9);
-    ctx.lineTo(size * 0.16, -size * 0.2);
-    ctx.lineTo(size * 0.85, size * 0.15);
-    ctx.lineTo(size * 0.75, size * 0.32);
-    ctx.lineTo(size * 0.16, size * 0.18);
-    ctx.lineTo(size * 0.14, size * 0.65);
-    ctx.lineTo(size * 0.45, size * 0.82);
-    ctx.lineTo(size * 0.40, size * 0.95);
-    ctx.lineTo(0, size * 0.85);
-    ctx.lineTo(-size * 0.40, size * 0.95);
-    ctx.lineTo(-size * 0.45, size * 0.82);
-    ctx.lineTo(-size * 0.14, size * 0.65);
-    ctx.lineTo(-size * 0.16, size * 0.18);
-    ctx.lineTo(-size * 0.75, size * 0.32);
-    ctx.lineTo(-size * 0.85, size * 0.15);
-    ctx.lineTo(-size * 0.16, -size * 0.2);
-    ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
