@@ -642,7 +642,7 @@ export class PlayerRenderer {
     return bgCanvas;
   }
 
-  draw() {
+  draw(time = 0) {
     const ctx = this.ctx;
     const W = this.canvas.width;
     const H = this.canvas.height;
