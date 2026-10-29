@@ -181,6 +181,33 @@
             <label class="spectrum-toggle-row" for="marquee-toggle"><span><strong>Scrolling Text (Marquee)</strong><small>Otomatis geser judul & nama artis panjang</small></span><input id="marquee-toggle" type="checkbox" checked aria-label="Aktifkan Scrolling Text" /></label>
           </div>
 
+          <div id="border-light-controls" class="glass-controls border-light-controls" hidden>
+            <div class="field-label-row"><span class="group-label">Border Light Animation</span><span class="label-hint">GLASS EDGE GLOW</span></div>
+
+            <label class="spectrum-toggle-row" for="border-light-toggle"><span><strong>Animated Border Light</strong><small>Cahaya bergerak mengelilingi tepi kartu kaca</small></span><input id="border-light-toggle" type="checkbox" checked aria-label="Aktifkan Animated Border Light" /></label>
+
+            <div class="border-light-options">
+              <div class="color-row border-light-color-row">
+                <label for="border-light-color">Warna Cahaya</label>
+                <input id="border-light-color" type="color" value="#ffffff" aria-label="Warna Cahaya Border" />
+                <span id="border-light-color-value">#FFFFFF</span>
+              </div>
+
+              <div class="direction-row">
+                <label for="border-light-direction">Arah Putaran</label>
+                <select id="border-light-direction" aria-label="Arah Putaran Border Light">
+                  <option value="cw" selected>Searah jarum jam (CW)</option>
+                  <option value="ccw">Berlawanan (CCW)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="glass-range"><label for="border-light-thickness"><span>Ketebalan Garis</span><output id="border-light-thickness-value">1.5 px</output></label><input id="border-light-thickness" type="range" min="0.5" max="4.0" step="0.5" value="1.5" aria-label="Ketebalan Garis Border" /></div>
+            <div class="glass-range"><label for="border-light-glow"><span>Intensitas Glow</span><output id="border-light-glow-value">60%</output></label><input id="border-light-glow" type="range" min="0" max="100" step="5" value="60" aria-label="Intensitas Glow Border" /></div>
+            <div class="glass-range"><label for="border-light-duration"><span>Durasi Putaran (Kecepatan)</span><output id="border-light-duration-value">6.0 s</output></label><input id="border-light-duration" type="range" min="2.0" max="15.0" step="0.5" value="6.0" aria-label="Durasi Putaran Border" /></div>
+            <div class="glass-range"><label for="border-light-trail"><span>Panjang Ekor Cahaya (Trail)</span><output id="border-light-trail-value">15%</output></label><input id="border-light-trail" type="range" min="5" max="35" step="1" value="15" aria-label="Panjang Ekor Cahaya" /></div>
+          </div>
+
           <div class="design-group quality-group"><div class="field-label-row"><span class="group-label">Kualitas video</span><span class="label-hint">ENCODER BROWSER</span></div><div class="quality-options" role="group" aria-label="Kualitas video">
             <button type="button" data-quality="fast" class="quality-option" aria-pressed="false"><b>Cepat</b><small>Ukuran lebih kecil</small></button>
             <button type="button" data-quality="balanced" class="quality-option selected" aria-pressed="true"><b>Seimbang</b><small>Disarankan</small></button>

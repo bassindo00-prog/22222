@@ -66,6 +66,13 @@ async function start(message) {
     marqueeSpeed: config.marqueeSpeed,
     focusTitle: config.focusTitle,
     focusSubtitle: config.focusSubtitle,
+    borderLightEnabled: config.borderLightEnabled,
+    borderLightColor: config.borderLightColor,
+    borderLightThickness: config.borderLightThickness,
+    borderLightGlow: config.borderLightGlow,
+    borderLightDuration: config.borderLightDuration,
+    borderLightTrail: config.borderLightTrail,
+    borderLightDirection: config.borderLightDirection,
     foregroundX: config.foregroundX,
     foregroundY: config.foregroundY,
     foregroundScale: config.foregroundScale,
@@ -157,7 +164,7 @@ async function finish(message) {
       : null;
 
     const tDraw = performance.now();
-    renderer.draw();
+    renderer.draw(time);
     frameGenMs += (performance.now() - tDraw);
 
     const frameDuration = Math.min(1 / config.fps, config.duration - time);

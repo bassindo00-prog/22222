@@ -12,6 +12,7 @@ const refs = {
   glassControls: $('#glass-controls'), blueGlow: $('#blue-glow'), blueGlowValue: $('#blue-glow-value'), glassOpacity: $('#glass-opacity'), glassOpacityValue: $('#glass-opacity-value'), glassBlur: $('#glass-blur'), glassBlurValue: $('#glass-blur-value'), verifiedBadgeToggle: $('#verified-badge-toggle'),
   customBgInput: $('#custom-bg-input'), customBgDrop: $('#custom-bg-drop'), customBgEmpty: $('#custom-bg-empty'), customBgFilled: $('#custom-bg-filled'), customBgThumb: $('#custom-bg-thumb'), customBgName: $('#custom-bg-name'), customBgSize: $('#custom-bg-size'), customBgRemove: $('#custom-bg-remove'),
   purpleControls: $('#purple-glass-controls'), purpleBgInput: $('#purple-bg-input'), purpleBgDrop: $('#purple-bg-drop'), purpleBgEmpty: $('#purple-bg-empty'), purpleBgFilled: $('#purple-bg-filled'), purpleBgThumb: $('#purple-bg-thumb'), purpleBgName: $('#purple-bg-name'), purpleBgSize: $('#purple-bg-size'), purpleBgRemove: $('#purple-bg-remove'), purpleGlow: $('#purple-glow'), purpleGlowValue: $('#purple-glow-value'), purpleOpacity: $('#purple-opacity'), purpleOpacityValue: $('#purple-opacity-value'), marqueeSpeed: $('#marquee-speed'), marqueeSpeedValue: $('#marquee-speed-value'), marqueeToggle: $('#marquee-toggle'),
+  borderLightControls: $('#border-light-controls'), borderLightToggle: $('#border-light-toggle'), borderLightColor: $('#border-light-color'), borderLightColorValue: $('#border-light-color-value'), borderLightDirection: $('#border-light-direction'), borderLightThickness: $('#border-light-thickness'), borderLightThicknessValue: $('#border-light-thickness-value'), borderLightGlow: $('#border-light-glow'), borderLightGlowValue: $('#border-light-glow-value'), borderLightDuration: $('#border-light-duration'), borderLightDurationValue: $('#border-light-duration-value'), borderLightTrail: $('#border-light-trail'), borderLightTrailValue: $('#border-light-trail-value'),
   renderButton: $('#render-button'), cancelRender: $('#cancel-render'), memoryWarning: $('#memory-warning'), renderError: $('#render-error'), stateBadge: $('#render-state-badge'), progressRing: $('#progress-ring'), ringProgress: $('#ring-progress'), progressPercent: $('#progress-percent'), progressTitle: $('#progress-title'), progressDescription: $('#progress-description'), linearProgress: $('#linear-progress'), progressDetail: $('#progress-detail'), resultState: $('#result-state'), resultEmpty: $('#result-empty'), resultContent: $('#result-content'), outputVideo: $('#output-video'), outputFilename: $('#output-filename'), outputMeta: $('#output-meta'), download: $('#download-button')
 };
 
@@ -21,6 +22,7 @@ const state = {
   ratio: 'portrait', ratioBeforeModel: null, resolution: 1080, quality: 'balanced', background: 'blur', color: '#111116', template: 'minimal', spectrumEnabled: false, carouselDepth: 58, backgroundIntensity: 68, current: 0, playing: false, volume: .8,
   blueGlow: 75, glassOpacity: 70, glassBlur: 60, verifiedBadge: true, glassTag: '+ Creativestyle', customBackgroundFile: null, customBackgroundUrl: null,
   purpleGlow: 80, purpleGlassOpacity: 75, marqueeEnabled: true, marqueeSpeed: 45, focusTitle: 'Temps', focusSubtitle: 'pour soi',
+  borderLightEnabled: true, borderLightColor: '#ffffff', borderLightThickness: 1.5, borderLightGlow: 60, borderLightDuration: 6.0, borderLightTrail: 15, borderLightDirection: 'cw',
   audioContext: null, analyser: null, gain: null, sourceNode: null, frequency: null, rendering: false, renderWorker: null, cancelRenderReject: null, workerWaiters: null, outputUrl: null, cancelRequested: false,
   coverSeq: 0, titleEdited: false, artistEdited: false, albumEdited: false
 };
@@ -30,9 +32,18 @@ const player = new PlayerRenderer(refs.canvas, () => ({
   background: state.background, color: state.color, template: state.template,
   foregroundX: state.foregroundX, foregroundY: state.foregroundY, foregroundScale: state.foregroundScale,
   spectrumEnabled: state.spectrumEnabled, carouselDepth: state.carouselDepth, backgroundIntensity: state.backgroundIntensity,
+    blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
+    verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
+    purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity,
+    marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed,
+    borderLightEnabled: state.borderLightEnabled, borderLightColor: state.borderLightColor,
+    borderLightThickness: state.borderLightThickness, borderLightGlow: state.borderLightGlow,
+    borderLightDuration: state.borderLightDuration, borderLightTrail: state.borderLightTrail,
+    borderLightDirection: state.borderLightDirection,
   blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
   verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
     purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
+    borderLightEnabled: state.borderLightEnabled, borderLightColor: state.borderLightColor, borderLightThickness: state.borderLightThickness, borderLightGlow: state.borderLightGlow, borderLightDuration: state.borderLightDuration, borderLightTrail: state.borderLightTrail, borderLightDirection: state.borderLightDirection,
   progress: state.duration ? Math.max(0, Math.min(1, (refs.audio ? refs.audio.currentTime - state.trimStart : state.current - state.trimStart) / (state.trimEnd - state.trimStart || 1))) : 0,
   current: Math.max(0, (refs.audio?.currentTime ?? state.current) - state.trimStart), duration: Math.max(0, state.trimEnd - state.trimStart),
   playing: state.playing, volume: state.volume
@@ -140,6 +151,20 @@ function syncTemplateControls() {
   if (refs.purpleOpacityValue) refs.purpleOpacityValue.textContent = `${state.purpleGlassOpacity}%`;
   if (refs.marqueeSpeedValue) refs.marqueeSpeedValue.textContent = `${state.marqueeSpeed} px/s`;
   if (refs.marqueeToggle) refs.marqueeToggle.checked = state.marqueeEnabled;
+  const isGlassLike = glass || purpleGlass;
+  if (refs.borderLightControls) refs.borderLightControls.hidden = !isGlassLike;
+  if (refs.borderLightToggle) refs.borderLightToggle.checked = state.borderLightEnabled;
+  if (refs.borderLightColor) refs.borderLightColor.value = state.borderLightColor;
+  if (refs.borderLightColorValue) refs.borderLightColorValue.textContent = state.borderLightColor.toUpperCase();
+  if (refs.borderLightDirection) refs.borderLightDirection.value = state.borderLightDirection;
+  if (refs.borderLightThickness) refs.borderLightThickness.value = state.borderLightThickness;
+  if (refs.borderLightThicknessValue) refs.borderLightThicknessValue.textContent = `${Number(state.borderLightThickness).toFixed(1)} px`;
+  if (refs.borderLightGlow) refs.borderLightGlow.value = state.borderLightGlow;
+  if (refs.borderLightGlowValue) refs.borderLightGlowValue.textContent = `${state.borderLightGlow}%`;
+  if (refs.borderLightDuration) refs.borderLightDuration.value = state.borderLightDuration;
+  if (refs.borderLightDurationValue) refs.borderLightDurationValue.textContent = `${Number(state.borderLightDuration).toFixed(1)} s`;
+  if (refs.borderLightTrail) refs.borderLightTrail.value = state.borderLightTrail;
+  if (refs.borderLightTrailValue) refs.borderLightTrailValue.textContent = `${state.borderLightTrail}%`;
 }
 
 function syncRatioAvailability() {
@@ -1038,6 +1063,54 @@ if (refs.marqueeSpeed) {
 if (refs.marqueeToggle) {
   refs.marqueeToggle.addEventListener('change', () => {
     state.marqueeEnabled = refs.marqueeToggle.checked;
+    player.draw();
+  });
+}
+
+if (refs.borderLightToggle) {
+  refs.borderLightToggle.addEventListener('change', () => {
+    state.borderLightEnabled = refs.borderLightToggle.checked;
+    player.draw();
+  });
+}
+if (refs.borderLightColor) {
+  refs.borderLightColor.addEventListener('input', () => {
+    state.borderLightColor = refs.borderLightColor.value;
+    if (refs.borderLightColorValue) refs.borderLightColorValue.textContent = state.borderLightColor.toUpperCase();
+    player.draw();
+  });
+}
+if (refs.borderLightDirection) {
+  refs.borderLightDirection.addEventListener('change', () => {
+    state.borderLightDirection = refs.borderLightDirection.value;
+    player.draw();
+  });
+}
+if (refs.borderLightThickness) {
+  refs.borderLightThickness.addEventListener('input', () => {
+    state.borderLightThickness = Number(refs.borderLightThickness.value);
+    if (refs.borderLightThicknessValue) refs.borderLightThicknessValue.textContent = `${state.borderLightThickness.toFixed(1)} px`;
+    player.draw();
+  });
+}
+if (refs.borderLightGlow) {
+  refs.borderLightGlow.addEventListener('input', () => {
+    state.borderLightGlow = Number(refs.borderLightGlow.value);
+    if (refs.borderLightGlowValue) refs.borderLightGlowValue.textContent = `${state.borderLightGlow}%`;
+    player.draw();
+  });
+}
+if (refs.borderLightDuration) {
+  refs.borderLightDuration.addEventListener('input', () => {
+    state.borderLightDuration = Number(refs.borderLightDuration.value);
+    if (refs.borderLightDurationValue) refs.borderLightDurationValue.textContent = `${state.borderLightDuration.toFixed(1)} s`;
+    player.draw();
+  });
+}
+if (refs.borderLightTrail) {
+  refs.borderLightTrail.addEventListener('input', () => {
+    state.borderLightTrail = Number(refs.borderLightTrail.value);
+    if (refs.borderLightTrailValue) refs.borderLightTrailValue.textContent = `${state.borderLightTrail}%`;
     player.draw();
   });
 }

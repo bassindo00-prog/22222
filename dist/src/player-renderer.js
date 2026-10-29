@@ -237,6 +237,119 @@ function drawMarqueeText(ctx, text, boxX, boxY, boxW, boxH, font, color, time, {
   ctx.restore();
 }
 
+function getPointOnRoundedRect(x, y, w, h, r, d) {
+  const radius = Math.min(r, w / 2, h / 2);
+  const L1 = w - 2 * radius;
+  const A1 = Math.PI * radius / 2;
+  const L2 = h - 2 * radius;
+  const A2 = A1;
+  const L3 = L1;
+  const A3 = A1;
+  const L4 = L2;
+  const A4 = A1;
+  const P = 2 * (L1 + L2) + 4 * A1;
+  let dist = ((d % P) + P) % P;
+
+  if (dist < L1) return { x: x + radius + dist, y };
+  dist -= L1;
+  if (dist < A1) {
+    const th = -Math.PI / 2 + (dist / A1) * (Math.PI / 2);
+    return { x: x + w - radius + radius * Math.cos(th), y: y + radius + radius * Math.sin(th) };
+  }
+  dist -= A1;
+  if (dist < L2) return { x: x + w, y: y + radius + dist };
+  dist -= L2;
+  if (dist < A2) {
+    const th = (dist / A2) * (Math.PI / 2);
+    return { x: x + w - radius + radius * Math.cos(th), y: y + h - radius + radius * Math.sin(th) };
+  }
+  dist -= A2;
+  if (dist < L3) return { x: x + w - radius - dist, y: y + h };
+  dist -= L3;
+  if (dist < A3) {
+    const th = Math.PI / 2 + (dist / A3) * (Math.PI / 2);
+    return { x: x + radius + radius * Math.cos(th), y: y + h - radius + radius * Math.sin(th) };
+  }
+  dist -= A3;
+  if (dist < L4) return { x, y: y + h - radius - dist };
+  dist -= L4;
+  const th = Math.PI + (dist / A4) * (Math.PI / 2);
+  return { x: x + radius + radius * Math.cos(th), y: y + radius + radius * Math.sin(th) };
+}
+
+function drawAnimatedBorderLight(ctx, x, y, w, h, r, s, animTime) {
+  if (s.borderLightEnabled === false) return;
+
+  const hexColor = s.borderLightColor || '#ffffff';
+  const thickness = Math.max(0.5, Number(s.borderLightThickness) || 1.5);
+  const duration = Math.max(1, Number(s.borderLightDuration) || 6);
+  const glow = clamp(Number(s.borderLightGlow ?? 60) / 100, 0, 1);
+  const trailRatio = clamp(Number(s.borderLightTrail ?? 15) / 100, 0.04, 0.40);
+  const clockwise = s.borderLightDirection !== 'ccw';
+
+  const radius = Math.min(r, w / 2, h / 2);
+  const P = 2 * (w + h) - (4 - Math.PI) * 2 * radius;
+  if (P <= 0) return;
+
+  let progress = (animTime / duration) % 1;
+  if (progress < 0) progress += 1;
+  if (!clockwise) progress = 1 - progress;
+
+  const headDist = progress * P;
+  const trailLen = P * trailRatio;
+
+  const N = 20;
+  const sliceLen = (trailLen / N) * 1.08;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (let i = 0; i < N; i++) {
+    const f = (i + 1) / N; // 0..1 (0 = tail, 1 = head)
+    const sliceDist = headDist - trailLen + i * (trailLen / N);
+    const alpha = Math.pow(f, 2.4) * 0.95;
+    const lw = thickness * (0.75 + 0.5 * f);
+
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = toRgba(hexColor, alpha);
+    ctx.setLineDash([sliceLen, P - sliceLen]);
+    ctx.lineDashOffset = -sliceDist;
+
+    if (i >= N - 5 && glow > 0.02) {
+      ctx.shadowColor = toRgba(hexColor, 0.85 * glow);
+      ctx.shadowBlur = Math.max(3, thickness * 5 * glow * f);
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+
+    roundedRect(ctx, x, y, w, h, radius);
+    ctx.stroke();
+  }
+
+  // Draw bright glowing head spark
+  const headPoint = getPointOnRoundedRect(x, y, w, h, radius, headDist);
+  const spotRadius = Math.max(1.8, thickness * 2.2);
+  const spotGrad = ctx.createRadialGradient(
+    headPoint.x, headPoint.y, 0,
+    headPoint.x, headPoint.y, spotRadius * (1 + 2.2 * glow)
+  );
+  spotGrad.addColorStop(0, toRgba(hexColor, 1));
+  spotGrad.addColorStop(0.35, toRgba(hexColor, 0.85 * glow));
+  spotGrad.addColorStop(1, toRgba(hexColor, 0));
+
+  ctx.setLineDash([]);
+  ctx.fillStyle = spotGrad;
+  ctx.shadowColor = toRgba(hexColor, 0.9 * glow);
+  ctx.shadowBlur = spotRadius * (2 + 4 * glow);
+  ctx.beginPath();
+  ctx.arc(headPoint.x, headPoint.y, spotRadius * (1 + 2.2 * glow), 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 export class PlayerRenderer {
   constructor(canvas, getState) {
     this.canvas = canvas;
@@ -348,9 +461,9 @@ export class PlayerRenderer {
   start() {
     if (this.running) return;
     this.running = true;
-    const loop = () => {
+    const loop = (timestamp) => {
       if (!this.running) return;
-      this.draw();
+      this.draw(timestamp ? timestamp / 1000 : 0);
       this.frame = requestAnimationFrame(loop);
     };
     this.frame = requestAnimationFrame(loop);
@@ -538,11 +651,11 @@ export class PlayerRenderer {
     ctx.clearRect(0, 0, W, H);
 
     if (s.template === 'purple-glass') {
-      this.drawPurpleGlass(s, W, H);
+      this.drawPurpleGlass(s, W, H, time);
       return;
     }
     if (s.template === 'glass') {
-      this.drawGlass(s, W, H);
+      this.drawGlass(s, W, H, time);
       return;
     }
     if (s.template === 'spotify') {
@@ -1342,6 +1455,9 @@ export class PlayerRenderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(s.glassTag || '+ Creativestyle', pillX + pillW / 2, ctrlY);
+
+    // Animated Glass Border Light
+    drawAnimatedBorderLight(ctx, cardX, cardY, cardW, cardH, cardR, s, scrollTime);
   }
 
   drawGlassControlBtn(ctx, x, y, r, type, playing) {
@@ -1630,6 +1746,9 @@ export class PlayerRenderer {
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.restore();
+
+    // Animated Glass Border Light
+    drawAnimatedBorderLight(ctx, cardX, cardY, cardW, cardH, cardR, s, scrollTime);
   }
 
   drawPurpleControls(ctx, cx, cy, spacing, iconSize, playing) {
