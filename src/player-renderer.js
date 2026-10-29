@@ -162,6 +162,15 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.roundRect(x, y, w, h, radius);
 }
 
+function isImageDrawable(img) {
+  if (!img) return false;
+  const w = img.naturalWidth || img.width || 0;
+  const h = img.naturalHeight || img.height || 0;
+  if (!w || !h) return false;
+  if ('complete' in img && !img.complete) return false;
+  return true;
+}
+
 function cropImage(ctx, image, x, y, width, height, radius) {
   roundedRect(ctx, x, y, width, height, radius);
   ctx.save();
@@ -1043,12 +1052,12 @@ export class PlayerRenderer {
     const glowPulse = 1 + Math.sin(nowTime * 0.8) * 0.05;
 
     // 1. Background
-    if (this.customBackground) {
+    if (isImageDrawable(this.customBackground)) {
       cropImage(ctx, this.customBackground, 0, 0, W, H, 0);
       const bgBlur = clamp((s.glassBlur ?? 60) / 100, 0, 1);
       ctx.fillStyle = `rgba(2, 10, 18, ${0.35 + bgBlur * 0.4})`;
       ctx.fillRect(0, 0, W, H);
-    } else if (s.background === 'blur' && this.image?.complete && this.image.naturalWidth) {
+    } else if (s.background === 'blur' && isImageDrawable(this.image)) {
       cropImage(ctx, this.image, 0, 0, W, H, 0);
       ctx.fillStyle = 'rgba(2, 12, 22, 0.72)';
       ctx.fillRect(0, 0, W, H);
@@ -1172,7 +1181,7 @@ export class PlayerRenderer {
     const artY = cardY + pad;
     const artR = artSize * 0.18;
 
-    if (this.image?.complete && this.image.naturalWidth) {
+    if (isImageDrawable(this.image)) {
       cropImage(ctx, this.image, artX, artY, artSize, artSize, artR);
     } else {
       ctx.save();
@@ -1393,11 +1402,11 @@ export class PlayerRenderer {
     const glowPulse = 1 + Math.sin(nowTime * 0.75) * 0.05;
 
     // 1. Background
-    if (this.customBackground) {
+    if (isImageDrawable(this.customBackground)) {
       cropImage(ctx, this.customBackground, 0, 0, W, H, 0);
       ctx.fillStyle = 'rgba(25, 10, 40, 0.42)';
       ctx.fillRect(0, 0, W, H);
-    } else if (s.background === 'blur' && this.image?.complete && this.image.naturalWidth) {
+    } else if (s.background === 'blur' && isImageDrawable(this.image)) {
       cropImage(ctx, this.image, 0, 0, W, H, 0);
       ctx.fillStyle = 'rgba(32, 12, 50, 0.75)';
       ctx.fillRect(0, 0, W, H);
@@ -1594,7 +1603,7 @@ export class PlayerRenderer {
     const artY = musicCardY + mPad;
     const artR = artSize * 0.16;
 
-    if (this.image?.complete && this.image.naturalWidth) {
+    if (isImageDrawable(this.image)) {
       cropImage(ctx, this.image, artX, artY, artSize, artSize, artR);
     } else {
       ctx.save();
