@@ -421,6 +421,10 @@ export class PlayerRenderer {
     this.phoneAestheticBackground = null;
     this.phoneAestheticBackgroundReady = null;
     this.phoneCustomBackground = null;
+    this.phoneCustomBgVersion = 0;
+    this.phoneBgKey = null;
+    this.phoneBgCanvas = null;
+    this.phoneBgCoords = null;
     this.phoneScreenCanvas = null;
   }
 
@@ -428,6 +432,7 @@ export class PlayerRenderer {
     if (!this.phoneAestheticBackgroundReady) {
       this.phoneAestheticBackgroundReady = loadPhoneAestheticBackground().then((image) => {
         this.phoneAestheticBackground = image;
+        this.phoneBgKey = null;
         this.draw();
         return image;
       }).catch((error) => {
@@ -439,6 +444,8 @@ export class PlayerRenderer {
   }
 
   setPhoneCustomBackground(url) {
+    this.phoneCustomBgVersion = (this.phoneCustomBgVersion || 0) + 1;
+    this.phoneBgKey = null;
     if (url && typeof ImageBitmap !== 'undefined' && url instanceof ImageBitmap) {
       this.phoneCustomBackground = url;
       this.draw();
@@ -447,12 +454,75 @@ export class PlayerRenderer {
     this.phoneCustomBackground = null;
     if (url && typeof Image !== 'undefined') {
       const image = new Image();
-      image.onload = () => { if (this.phoneCustomBackground === image) this.draw(); };
-      image.onerror = () => { if (this.phoneCustomBackground === image) this.phoneCustomBackground = null; };
+      image.onload = () => { if (this.phoneCustomBackground === image) { this.phoneBgKey = null; this.draw(); } };
+      image.onerror = () => { if (this.phoneCustomBackground === image) { this.phoneCustomBackground = null; this.phoneBgKey = null; } };
       this.phoneCustomBackground = image;
       image.src = url;
     }
     this.draw();
+  }
+
+  ensurePhoneBgCanvas(s, W, H, bgImg, imgW, imgH, landscape, portrait, userScale, userOffsetX, userOffsetY, brightness, saturation, blurPx) {
+    const isCustom = bgImg === this.phoneCustomBackground;
+    const key = [
+      W, H,
+      isCustom ? 'custom' : 'default',
+      isCustom ? (this.phoneCustomBgVersion || 0) : 0,
+      landscape, portrait, userScale, userOffsetX, userOffsetY,
+      brightness, saturation, blurPx
+    ].join('|');
+
+    if (key === this.phoneBgKey && this.phoneBgCanvas) {
+      return this.phoneBgCanvas;
+    }
+
+    const canvas = makeCanvas(W, H);
+    const bCtx = canvas.getContext('2d');
+
+    let scale, bx, by, bw, bh;
+    if (portrait) {
+      scale = Math.max(W / imgW, H / imgH) * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = (H - bh) / 2 + userOffsetY;
+    } else if (landscape) {
+      scale = (H / imgH) * 1.15 * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = (H - bh) / 2 + userOffsetY;
+    } else {
+      scale = Math.max(W / imgW, H / imgH) * 1.12 * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = H * 0.5 - 0.58 * bh + userOffsetY;
+    }
+
+    if (landscape) {
+      bCtx.save();
+      bCtx.filter = `blur(32px) brightness(${brightness * 0.72}%) saturate(${saturation}%)`;
+      const fillScale = Math.max(W / imgW, H / imgH) * 1.05;
+      const fbw = imgW * fillScale;
+      const fbh = imgH * fillScale;
+      bCtx.drawImage(bgImg, (W - fbw) / 2, (H - fbh) / 2, fbw, fbh);
+      bCtx.restore();
+    }
+
+    bCtx.save();
+    const filterParts = [];
+    if (brightness !== 100) filterParts.push(`brightness(${brightness}%)`);
+    if (saturation !== 100) filterParts.push(`saturate(${saturation}%)`);
+    if (blurPx > 0) filterParts.push(`blur(${blurPx}px)`);
+    if (filterParts.length > 0) bCtx.filter = filterParts.join(' ');
+    bCtx.drawImage(bgImg, bx, by, bw, bh);
+    bCtx.restore();
+
+    this.phoneBgKey = key;
+    this.phoneBgCanvas = canvas;
+    this.phoneBgCoords = { bx, by, bw, bh };
+    return canvas;
   }
 
   ensureModelBackground() {
@@ -1897,50 +1967,18 @@ export class PlayerRenderer {
     const portrait = H > W * 1.2;
     const landscape = W > H * 1.25;
 
-    let scale, bx, by, bw, bh;
-    if (portrait) {
-      scale = Math.max(W / imgW, H / imgH) * userScale;
-      bw = imgW * scale;
-      bh = imgH * scale;
-      bx = (W - bw) / 2 + userOffsetX;
-      by = (H - bh) / 2 + userOffsetY;
-    } else if (landscape) {
-      scale = (H / imgH) * 1.15 * userScale;
-      bw = imgW * scale;
-      bh = imgH * scale;
-      bx = (W - bw) / 2 + userOffsetX;
-      by = (H - bh) / 2 + userOffsetY;
-    } else {
-      scale = Math.max(W / imgW, H / imgH) * 1.12 * userScale;
-      bw = imgW * scale;
-      bh = imgH * scale;
-      bx = (W - bw) / 2 + userOffsetX;
-      by = H * 0.5 - 0.58 * bh + userOffsetY;
-    }
-
     const brightness = clamp(Number(s.phoneBgBrightness ?? 100), 20, 200);
     const saturation = clamp(Number(s.phoneBgSaturation ?? 100), 0, 250);
     const blurPx = Math.max(0, Math.min(30, Number(s.phoneBgBlur ?? 0)));
 
-    if (landscape) {
-      ctx.save();
-      ctx.filter = `blur(32px) brightness(${brightness * 0.72}%) saturate(${saturation}%)`;
-      const fillScale = Math.max(W / imgW, H / imgH) * 1.05;
-      const fbw = imgW * fillScale;
-      const fbh = imgH * fillScale;
-      ctx.drawImage(bgImg, (W - fbw) / 2, (H - fbh) / 2, fbw, fbh);
-      ctx.restore();
-    }
+    const bgCanvas = this.ensurePhoneBgCanvas(
+      s, W, H, bgImg, imgW, imgH, landscape, portrait,
+      userScale, userOffsetX, userOffsetY,
+      brightness, saturation, blurPx
+    );
+    ctx.drawImage(bgCanvas, 0, 0);
 
-    ctx.save();
-    const filterParts = [];
-    if (brightness !== 100) filterParts.push(`brightness(${brightness}%)`);
-    if (saturation !== 100) filterParts.push(`saturate(${saturation}%)`);
-    if (blurPx > 0) filterParts.push(`blur(${blurPx}px)`);
-    if (filterParts.length > 0) ctx.filter = filterParts.join(' ');
-    ctx.drawImage(bgImg, bx, by, bw, bh);
-    ctx.restore();
-
+    const { bx, by, bw, bh } = this.phoneBgCoords;
     const tlU = Number(s.phoneScreenTLX ?? PHONE_AESTHETIC_DEFAULTS.tl.x);
     const tlV = Number(s.phoneScreenTLY ?? PHONE_AESTHETIC_DEFAULTS.tl.y);
     const trU = Number(s.phoneScreenTRX ?? PHONE_AESTHETIC_DEFAULTS.tr.x);
@@ -2331,7 +2369,7 @@ export class PlayerRenderer {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    drawPerspectiveImage(ctx, this.phoneScreenCanvas, corners, 10, 18);
+    drawPerspectiveImage(ctx, this.phoneScreenCanvas, corners, 5, 9);
     ctx.restore();
 
     // Subtle inner glass bezel shadow / stroke
