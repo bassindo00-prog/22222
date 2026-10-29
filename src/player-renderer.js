@@ -1047,6 +1047,7 @@ export class PlayerRenderer {
     const portrait = H > W * 1.2;
     const landscape = W > H * 1.25;
     const nowTime = time || (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
+    const scrollTime = s.offline ? (s.current || 0) : nowTime;
     const blueGlow = clamp((s.blueGlow ?? 75) / 100, 0, 1);
     const glassOpacity = clamp((s.glassOpacity ?? 70) / 100, 0.1, 1);
     const glowPulse = 1 + Math.sin(nowTime * 0.8) * 0.05;
@@ -1226,19 +1227,44 @@ export class PlayerRenderer {
       ctx.restore();
     }
 
-    // Title & Artist
+    // Title & Artist with smooth Marquee Scrolling
     const textX = artX + artSize + pad * 0.75;
     const maxTextW = (showBadge ? badgeX - badgeR * 1.6 : cardX + cardW - pad) - textX;
+    const marqueeOpts = {
+      speed: s.marqueeSpeed || 45,
+      enableMarquee: s.marqueeEnabled !== false,
+      pauseTime: 1.8
+    };
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 ${artSize * 0.31}px sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(fitText(ctx, s.title, maxTextW, ctx.font, 'Judul lagu'), textX, artY + artSize * 0.14);
+    const titleH = artSize * 0.38;
+    const titleY = artY + artSize * 0.08;
+    drawMarqueeText(
+      ctx,
+      s.title || 'Judul lagu',
+      textX,
+      titleY,
+      maxTextW,
+      titleH,
+      `700 ${artSize * 0.31}px sans-serif`,
+      '#ffffff',
+      scrollTime,
+      marqueeOpts
+    );
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.font = `500 ${artSize * 0.24}px sans-serif`;
-    ctx.fillText(fitText(ctx, s.artist, maxTextW, ctx.font, 'Nama artis'), textX, artY + artSize * 0.58);
+    const artistH = artSize * 0.32;
+    const artistY = artY + artSize * 0.52;
+    drawMarqueeText(
+      ctx,
+      s.artist || 'Nama artis',
+      textX,
+      artistY,
+      maxTextW,
+      artistH,
+      `500 ${artSize * 0.24}px sans-serif`,
+      'rgba(255, 255, 255, 0.65)',
+      scrollTime,
+      marqueeOpts
+    );
 
     // 5. Progress Bar & Time
     const barY = artY + artSize + pad * 0.48;
