@@ -33,7 +33,6 @@ const player = new PlayerRenderer(refs.canvas, () => ({
   blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
   verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
     purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
-  purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
   progress: state.duration ? Math.max(0, Math.min(1, (refs.audio ? refs.audio.currentTime - state.trimStart : state.current - state.trimStart) / (state.trimEnd - state.trimStart || 1))) : 0,
   current: Math.max(0, (refs.audio?.currentTime ?? state.current) - state.trimStart), duration: Math.max(0, state.trimEnd - state.trimStart),
   playing: state.playing, volume: state.volume
@@ -121,7 +120,11 @@ function syncMetadata() {
 
 function syncTemplateControls() {
   const carousel = state.template === 'spotify';
+  const glass = state.template === 'glass';
+  const purpleGlass = state.template === 'purple-glass';
   refs.carouselControls.hidden = !carousel;
+  if (refs.glassControls) refs.glassControls.hidden = !glass;
+  if (refs.purpleControls) refs.purpleControls.hidden = !purpleGlass;
   if (refs.foregroundControls) refs.foregroundControls.hidden = true;
   refs.coverBackgroundLabel.textContent = carousel ? 'Cover-derived' : 'Blur';
   document.querySelectorAll('.background-option').forEach((button) => { button.disabled = false; });
@@ -129,6 +132,14 @@ function syncTemplateControls() {
   refs.spectrumToggle.checked = state.spectrumEnabled;
   refs.carouselDepthValue.textContent = `${state.carouselDepth}%`;
   refs.backgroundIntensityValue.textContent = `${state.backgroundIntensity}%`;
+  if (refs.blueGlowValue) refs.blueGlowValue.textContent = `${state.blueGlow}%`;
+  if (refs.glassOpacityValue) refs.glassOpacityValue.textContent = `${state.glassOpacity}%`;
+  if (refs.glassBlurValue) refs.glassBlurValue.textContent = `${state.glassBlur}%`;
+  if (refs.verifiedBadgeToggle) refs.verifiedBadgeToggle.checked = state.verifiedBadge;
+  if (refs.purpleGlowValue) refs.purpleGlowValue.textContent = `${state.purpleGlow}%`;
+  if (refs.purpleOpacityValue) refs.purpleOpacityValue.textContent = `${state.purpleGlassOpacity}%`;
+  if (refs.marqueeSpeedValue) refs.marqueeSpeedValue.textContent = `${state.marqueeSpeed} px/s`;
+  if (refs.marqueeToggle) refs.marqueeToggle.checked = state.marqueeEnabled;
 }
 
 function syncRatioAvailability() {
@@ -764,8 +775,6 @@ refs.coverDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter
 refs.coverInput.addEventListener('change', () => loadImageFile(refs.coverInput.files?.[0]));
 refs.coverChange.addEventListener('click', (event) => { event.stopPropagation(); refs.coverInput.click(); });
 refs.coverRemove.addEventListener('click', (event) => { event.stopPropagation(); removeCover(); });
-if (refs.customBgDrop && refs.customBgInput) { dropZones.push([refs.customBgDrop, refs.customBgInput, loadCustomBackgroundFile]); }
-if (refs.purpleBgDrop && refs.purpleBgInput) { dropZones.push([refs.purpleBgDrop, refs.purpleBgInput, loadCustomBackgroundFile]); }
 if (refs.foregroundDrop && refs.foregroundInput) {
   refs.foregroundDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.foregroundInput.click(); });
   refs.foregroundDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.foregroundInput.click(); } });
@@ -779,6 +788,12 @@ refs.audioInput.addEventListener('change', () => loadAudioFile(refs.audioInput.f
 refs.audioRemove.addEventListener('click', (event) => { event.stopPropagation(); removeAudio(); });
 
 const dropZones = [[refs.coverDrop, refs.coverInput, loadImageFile], [refs.audioDrop, refs.audioInput, loadAudioFile]];
+if (refs.customBgDrop && refs.customBgInput) {
+  dropZones.push([refs.customBgDrop, refs.customBgInput, loadCustomBackgroundFile]);
+}
+if (refs.purpleBgDrop && refs.purpleBgInput) {
+  dropZones.push([refs.purpleBgDrop, refs.purpleBgInput, loadCustomBackgroundFile]);
+}
 if (refs.foregroundDrop && refs.foregroundInput) {
   dropZones.push([refs.foregroundDrop, refs.foregroundInput, loadForegroundFile]);
 }
