@@ -214,6 +214,7 @@ export class PlayerRenderer {
     this.minimalBaseCanvas = null;
     this.spotifyBgKey = null;
     this.spotifyBgCanvas = null;
+    this.customBackground = null;
   }
 
   ensureModelBackground() {
@@ -265,6 +266,23 @@ export class PlayerRenderer {
       image.onload = () => { if (this.foreground === image) this.draw(); };
       image.onerror = () => { if (this.foreground === image) this.foreground = null; };
       this.foreground = image;
+      image.src = url;
+    }
+    this.draw();
+  }
+
+  setCustomBackground(url) {
+    if (url && typeof ImageBitmap !== 'undefined' && url instanceof ImageBitmap) {
+      this.customBackground = url;
+      this.draw();
+      return;
+    }
+    this.customBackground = null;
+    if (url && typeof Image !== 'undefined') {
+      const image = new Image();
+      image.onload = () => { if (this.customBackground === image) this.draw(); };
+      image.onerror = () => { if (this.customBackground === image) this.customBackground = null; };
+      this.customBackground = image;
       image.src = url;
     }
     this.draw();
@@ -473,6 +491,10 @@ export class PlayerRenderer {
     if (!W || !H) return;
     ctx.clearRect(0, 0, W, H);
 
+    if (s.template === 'glass') {
+      this.drawGlass(s, W, H);
+      return;
+    }
     if (s.template === 'spotify') {
       this.drawSpotify(s, W, H);
       return;
@@ -969,4 +991,353 @@ export class PlayerRenderer {
   }
 
   drawSignature(W, H) {}
+
+  drawGlass(s, W, H, time = 0) {
+    const ctx = this.ctx;
+    const portrait = H > W * 1.2;
+    const landscape = W > H * 1.25;
+    const nowTime = time || (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
+    const blueGlow = clamp((s.blueGlow ?? 75) / 100, 0, 1);
+    const glassOpacity = clamp((s.glassOpacity ?? 70) / 100, 0.1, 1);
+    const glowPulse = 1 + Math.sin(nowTime * 0.8) * 0.05;
+
+    // 1. Background
+    if (this.customBackground) {
+      cropImage(ctx, this.customBackground, 0, 0, W, H, 0);
+      const bgBlur = clamp((s.glassBlur ?? 60) / 100, 0, 1);
+      ctx.fillStyle = `rgba(2, 10, 18, ${0.35 + bgBlur * 0.4})`;
+      ctx.fillRect(0, 0, W, H);
+    } else if (s.background === 'blur' && this.image?.complete && this.image.naturalWidth) {
+      cropImage(ctx, this.image, 0, 0, W, H, 0);
+      ctx.fillStyle = 'rgba(2, 12, 22, 0.72)';
+      ctx.fillRect(0, 0, W, H);
+    } else if (s.background === 'solid') {
+      ctx.fillStyle = s.color || '#041824';
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, '#041e2e');
+      bgGrad.addColorStop(0.35, '#062940');
+      bgGrad.addColorStop(0.70, '#031726');
+      bgGrad.addColorStop(1, '#020910');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Organic luminous blue glow spots
+    if (blueGlow > 0.01) {
+      const orb1X = W * 0.94 + Math.sin(nowTime * 0.5) * W * 0.03;
+      const orb1Y = H * (portrait ? 0.36 : 0.32) + Math.cos(nowTime * 0.4) * H * 0.03;
+      const orb1R = Math.min(W, H) * 0.70;
+      const orb1 = ctx.createRadialGradient(orb1X, orb1Y, 0, orb1X, orb1Y, orb1R);
+      orb1.addColorStop(0, `rgba(0, 185, 255, ${0.48 * blueGlow * glowPulse})`);
+      orb1.addColorStop(0.32, `rgba(2, 132, 199, ${0.28 * blueGlow})`);
+      orb1.addColorStop(0.68, `rgba(3, 75, 115, ${0.12 * blueGlow})`);
+      orb1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = orb1;
+      ctx.fillRect(0, 0, W, H);
+
+      const orb2X = W * 0.06 + Math.cos(nowTime * 0.6) * W * 0.02;
+      const orb2Y = H * (portrait ? 0.66 : 0.72) + Math.sin(nowTime * 0.5) * H * 0.03;
+      const orb2R = Math.min(W, H) * 0.62;
+      const orb2 = ctx.createRadialGradient(orb2X, orb2Y, 0, orb2X, orb2Y, orb2R);
+      orb2.addColorStop(0, `rgba(0, 210, 255, ${0.36 * blueGlow})`);
+      orb2.addColorStop(0.45, `rgba(0, 119, 182, ${0.18 * blueGlow})`);
+      orb2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = orb2;
+      ctx.fillRect(0, 0, W, H);
+
+      const orb3X = W / 2;
+      const orb3Y = H * (portrait ? 0.52 : 0.50);
+      const orb3R = Math.min(W, H) * 0.52;
+      const orb3 = ctx.createRadialGradient(orb3X, orb3Y, 0, orb3X, orb3Y, orb3R);
+      orb3.addColorStop(0, `rgba(14, 165, 233, ${0.25 * blueGlow})`);
+      orb3.addColorStop(0.65, `rgba(2, 132, 199, ${0.08 * blueGlow})`);
+      orb3.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = orb3;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 2. Top Navigation (Typography  Story  Music   •••)
+    if (portrait || H >= W * 0.9) {
+      const navY = H * 0.098;
+      const navSpacing = Math.min(W * 0.15, 125);
+      const navCenterX = W * 0.43;
+      const navFontBase = Math.min(W, H) * 0.021;
+      ctx.font = `500 ${navFontBase}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillText('Typography', navCenterX - navSpacing, navY);
+      ctx.fillText('Story', navCenterX, navY);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `600 ${navFontBase}px sans-serif`;
+      ctx.fillText('Music', navCenterX + navSpacing, navY);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.font = `700 ${navFontBase * 1.1}px sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.fillText('•••', W * 0.89, navY);
+    }
+
+    // 3. Glass Music Player Card
+    const cardW = Math.min(W * (portrait ? 0.86 : landscape ? 0.48 : 0.78), 820);
+    const cardH = cardW * 0.50;
+    const cardX = (W - cardW) / 2;
+    const cardY = H * (portrait ? 0.52 : landscape ? 0.50 : 0.51) - cardH / 2;
+    const cardR = cardW * 0.075;
+
+    // Soft drop shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.52)';
+    ctx.shadowBlur = cardW * 0.085;
+    ctx.shadowOffsetY = cardW * 0.032;
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.40)';
+    ctx.fill();
+    ctx.restore();
+
+    // Frost base tint
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
+    ctx.fillStyle = `rgba(10, 36, 54, ${0.58 * glassOpacity})`;
+    ctx.fill();
+
+    // Subtle glass sheen
+    const glassGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    glassGrad.addColorStop(0, `rgba(255, 255, 255, ${0.20 * glassOpacity})`);
+    glassGrad.addColorStop(0.25, `rgba(255, 255, 255, ${0.08 * glassOpacity})`);
+    glassGrad.addColorStop(0.75, `rgba(255, 255, 255, ${0.04 * glassOpacity})`);
+    glassGrad.addColorStop(1, `rgba(255, 255, 255, ${0.14 * glassOpacity})`);
+    ctx.fillStyle = glassGrad;
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
+    ctx.fill();
+
+    // Ultra-thin white glass border
+    const borderGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    borderGrad.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
+    borderGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.14)');
+    borderGrad.addColorStop(1, 'rgba(255, 255, 255, 0.28)');
+    ctx.strokeStyle = borderGrad;
+    ctx.lineWidth = Math.max(1, cardW * 0.0022);
+    roundedRect(ctx, cardX, cardY, cardW, cardH, cardR);
+    ctx.stroke();
+
+    // 4. Content Inside Card
+    const pad = cardW * 0.068;
+
+    // Artwork
+    const artSize = cardH * 0.44;
+    const artX = cardX + pad;
+    const artY = cardY + pad;
+    const artR = artSize * 0.18;
+
+    if (this.image?.complete && this.image.naturalWidth) {
+      cropImage(ctx, this.image, artX, artY, artSize, artSize, artR);
+    } else {
+      ctx.save();
+      roundedRect(ctx, artX, artY, artSize, artSize, artR);
+      ctx.clip();
+      ctx.fillStyle = '#0f293a';
+      ctx.fillRect(artX, artY, artSize, artSize);
+      ctx.fillStyle = '#38bdf8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${artSize * 0.42}px sans-serif`;
+      ctx.fillText('♫', artX + artSize / 2, artY + artSize / 2);
+      ctx.restore();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1;
+    roundedRect(ctx, artX, artY, artSize, artSize, artR);
+    ctx.stroke();
+
+    // Verification Badge
+    const showBadge = s.verifiedBadge !== false;
+    const badgeR = artSize * 0.17;
+    const badgeX = cardX + cardW - pad - badgeR;
+    const badgeY = artY + artSize * 0.38;
+
+    if (showBadge) {
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = '#0ea5e9';
+      ctx.fill();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = Math.max(2, badgeR * 0.26);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(badgeX - badgeR * 0.45, badgeY);
+      ctx.lineTo(badgeX - badgeR * 0.10, badgeY + badgeR * 0.38);
+      ctx.lineTo(badgeX + badgeR * 0.45, badgeY - badgeR * 0.32);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Title & Artist
+    const textX = artX + artSize + pad * 0.75;
+    const maxTextW = (showBadge ? badgeX - badgeR * 1.6 : cardX + cardW - pad) - textX;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${artSize * 0.31}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(fitText(ctx, s.title, maxTextW, ctx.font, 'Judul lagu'), textX, artY + artSize * 0.14);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.font = `500 ${artSize * 0.24}px sans-serif`;
+    ctx.fillText(fitText(ctx, s.artist, maxTextW, ctx.font, 'Nama artis'), textX, artY + artSize * 0.58);
+
+    // 5. Progress Bar & Time
+    const barY = artY + artSize + pad * 0.48;
+    const timeFont = `500 ${cardW * 0.024}px sans-serif`;
+    ctx.font = timeFont;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.textBaseline = 'middle';
+
+    const timeStrLeft = formatTime(s.current || 0);
+    ctx.textAlign = 'left';
+    ctx.fillText(timeStrLeft, cardX + pad, barY);
+    const leftTimeW = ctx.measureText(timeStrLeft).width;
+
+    const timeStrRight = formatTime(s.duration || 0);
+    ctx.textAlign = 'right';
+    ctx.fillText(timeStrRight, cardX + cardW - pad, barY);
+    const rightTimeW = ctx.measureText(timeStrRight).width;
+
+    const trackGap = cardW * 0.022;
+    const trackX = cardX + pad + leftTimeW + trackGap;
+    const trackW = (cardX + cardW - pad - rightTimeW - trackGap) - trackX;
+    const trackH = Math.max(3, cardW * 0.007);
+    const trackY = barY - trackH / 2;
+
+    roundedRect(ctx, trackX, trackY, trackW, trackH, trackH / 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.fill();
+
+    const prog = clamp(s.duration > 0 ? (s.current / s.duration) : (s.progress || 0), 0, 1);
+    const fillW = Math.max(trackH, trackW * prog);
+    const progGrad = ctx.createLinearGradient(trackX, 0, trackX + fillW, 0);
+    progGrad.addColorStop(0, '#00b4d8');
+    progGrad.addColorStop(1, '#38bdf8');
+    roundedRect(ctx, trackX, trackY, fillW, trackH, trackH / 2);
+    ctx.fillStyle = progGrad;
+    ctx.fill();
+
+    const thumbX = trackX + fillW;
+    const thumbR = trackH * 1.5;
+    ctx.save();
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = thumbR * 2.5;
+    ctx.beginPath();
+    ctx.arc(thumbX, barY, thumbR, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.restore();
+
+    // 6. Controls (Volume, Prev, Play/Pause, Next, Note, + Creativestyle)
+    const ctrlY = barY + cardH * 0.20;
+    const btnR = cardW * 0.038;
+    const spacing = btnR * 2.45;
+    const startBtnX = cardX + pad + btnR;
+
+    const buttons = ['volume', 'prev', 'play_pause', 'next', 'note'];
+    for (let i = 0; i < buttons.length; i++) {
+      const bx = startBtnX + i * spacing;
+      this.drawGlassControlBtn(ctx, bx, ctrlY, btnR, buttons[i], s.playing);
+    }
+
+    const pillH = btnR * 2.05;
+    const pillW = cardW * 0.25;
+    const pillX = cardX + cardW - pad - pillW;
+    const pillY = ctrlY - pillH / 2;
+
+    roundedRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+    const pillGrad = ctx.createLinearGradient(pillX, 0, pillX + pillW, 0);
+    pillGrad.addColorStop(0, '#0284c7');
+    pillGrad.addColorStop(1, '#0ea5e9');
+    ctx.fillStyle = pillGrad;
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${pillH * 0.38}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.glassTag || '+ Creativestyle', pillX + pillW / 2, ctrlY);
+  }
+
+  drawGlassControlBtn(ctx, x, y, r, type, playing) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.11)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const s = r * 0.44;
+    if (type === 'volume') {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.8, y - s * 0.4);
+      ctx.lineTo(x - s * 0.35, y - s * 0.4);
+      ctx.lineTo(x + s * 0.1, y - s * 0.85);
+      ctx.lineTo(x + s * 0.1, y + s * 0.85);
+      ctx.lineTo(x - s * 0.35, y + s * 0.4);
+      ctx.lineTo(x - s * 0.8, y + s * 0.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + s * 0.1, y, s * 0.65, -0.6, 0.6);
+      ctx.lineWidth = Math.max(1.5, r * 0.12);
+      ctx.stroke();
+    } else if (type === 'prev') {
+      ctx.fillRect(x - s * 0.7, y - s * 0.75, s * 0.28, s * 1.5);
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.7, y - s * 0.75);
+      ctx.lineTo(x - s * 0.35, y);
+      ctx.lineTo(x + s * 0.7, y + s * 0.75);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'play_pause') {
+      if (playing) {
+        const bw = s * 0.32;
+        ctx.fillRect(x - s * 0.5, y - s * 0.75, bw, s * 1.5);
+        ctx.fillRect(x + s * 0.18, y - s * 0.75, bw, s * 1.5);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(x - s * 0.4, y - s * 0.8);
+        ctx.lineTo(x + s * 0.7, y);
+        ctx.lineTo(x - s * 0.4, y + s * 0.8);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (type === 'next') {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.7, y - s * 0.75);
+      ctx.lineTo(x + s * 0.35, y);
+      ctx.lineTo(x - s * 0.7, y + s * 0.75);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(x + s * 0.42, y - s * 0.75, s * 0.28, s * 1.5);
+    } else if (type === 'note') {
+      ctx.beginPath();
+      ctx.arc(x - s * 0.25, y + s * 0.45, s * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(x - s * 0.05, y - s * 0.7, s * 0.20, s * 1.15);
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.15, y - s * 0.7);
+      ctx.quadraticCurveTo(x + s * 0.7, y - s * 0.4, x + s * 0.65, y + s * 0.1);
+      ctx.lineWidth = Math.max(1.5, r * 0.14);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 }

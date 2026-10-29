@@ -8,13 +8,17 @@ const refs = {
   audioInput: $('#audio-input'), audioDrop: $('#audio-drop'), audioEmpty: $('#audio-empty'), audioFilled: $('#audio-filled'), audioName: $('#audio-name'), audioSize: $('#audio-size'), audioDuration: $('#audio-duration'), audioRemove: $('#audio-remove'), audioError: $('#audio-error'),
   title: $('#track-title'), artist: $('#track-artist'), album: $('#track-album'), originalDuration: $('#original-duration'), waveformEnd: $('#waveform-end'), waveform: $('#waveform'), trimStart: $('#trim-start'), trimEnd: $('#trim-end'), selectionDuration: $('#selection-duration'), trimError: $('#trim-error'), playSelection: $('#play-selection'), resetTrim: $('#reset-trim'),
   canvas: $('#player-canvas'), previewEmpty: $('#preview-empty'), previewPlay: $('#preview-play'), previewTitle: $('#preview-track-title'), previewArtist: $('#preview-track-artist'), currentTime: $('#current-time'), remainingTime: $('#remaining-time'), previewScrub: $('#preview-scrub'), skipStart: $('#skip-start'), skipEnd: $('#skip-end'), volume: $('#volume-control'), volumeLabel: $('#volume-label'),
-  colorRow: $('#color-row'), color: $('#background-color'), colorValue: $('#color-value'), coverBackgroundLabel: $('#cover-background-label'), spectrumToggle: $('#spectrum-toggle'), carouselControls: $('#carousel-controls'), carouselDepth: $('#carousel-depth'), carouselDepthValue: $('#carousel-depth-value'), backgroundIntensity: $('#background-intensity'), backgroundIntensityValue: $('#background-intensity-value'), renderButton: $('#render-button'), cancelRender: $('#cancel-render'), memoryWarning: $('#memory-warning'), renderError: $('#render-error'), stateBadge: $('#render-state-badge'), progressRing: $('#progress-ring'), ringProgress: $('#ring-progress'), progressPercent: $('#progress-percent'), progressTitle: $('#progress-title'), progressDescription: $('#progress-description'), linearProgress: $('#linear-progress'), progressDetail: $('#progress-detail'), resultState: $('#result-state'), resultEmpty: $('#result-empty'), resultContent: $('#result-content'), outputVideo: $('#output-video'), outputFilename: $('#output-filename'), outputMeta: $('#output-meta'), download: $('#download-button')
+  colorRow: $('#color-row'), color: $('#background-color'), colorValue: $('#color-value'), coverBackgroundLabel: $('#cover-background-label'), spectrumToggle: $('#spectrum-toggle'), carouselControls: $('#carousel-controls'), carouselDepth: $('#carousel-depth'), carouselDepthValue: $('#carousel-depth-value'), backgroundIntensity: $('#background-intensity'), backgroundIntensityValue: $('#background-intensity-value'),
+  glassControls: $('#glass-controls'), blueGlow: $('#blue-glow'), blueGlowValue: $('#blue-glow-value'), glassOpacity: $('#glass-opacity'), glassOpacityValue: $('#glass-opacity-value'), glassBlur: $('#glass-blur'), glassBlurValue: $('#glass-blur-value'), verifiedBadgeToggle: $('#verified-badge-toggle'),
+  customBgInput: $('#custom-bg-input'), customBgDrop: $('#custom-bg-drop'), customBgEmpty: $('#custom-bg-empty'), customBgFilled: $('#custom-bg-filled'), customBgThumb: $('#custom-bg-thumb'), customBgName: $('#custom-bg-name'), customBgSize: $('#custom-bg-size'), customBgRemove: $('#custom-bg-remove'),
+  renderButton: $('#render-button'), cancelRender: $('#cancel-render'), memoryWarning: $('#memory-warning'), renderError: $('#render-error'), stateBadge: $('#render-state-badge'), progressRing: $('#progress-ring'), ringProgress: $('#ring-progress'), progressPercent: $('#progress-percent'), progressTitle: $('#progress-title'), progressDescription: $('#progress-description'), linearProgress: $('#linear-progress'), progressDetail: $('#progress-detail'), resultState: $('#result-state'), resultEmpty: $('#result-empty'), resultContent: $('#result-content'), outputVideo: $('#output-video'), outputFilename: $('#output-filename'), outputMeta: $('#output-meta'), download: $('#download-button')
 };
 
 const state = {
   coverFile: null, coverUrl: null, coverSource: null, audioFile: null, audioUrl: null, duration: 0, trimStart: 0, trimEnd: 0, peaks: [],
   foregroundFile: null, foregroundUrl: null, foregroundSeq: 0, foregroundX: .58, foregroundY: .62, foregroundScale: 1,
   ratio: 'portrait', ratioBeforeModel: null, resolution: 1080, quality: 'balanced', background: 'blur', color: '#111116', template: 'minimal', spectrumEnabled: false, carouselDepth: 58, backgroundIntensity: 68, current: 0, playing: false, volume: .8,
+  blueGlow: 75, glassOpacity: 70, glassBlur: 60, verifiedBadge: true, glassTag: '+ Creativestyle', customBackgroundFile: null, customBackgroundUrl: null,
   audioContext: null, analyser: null, gain: null, sourceNode: null, frequency: null, rendering: false, renderWorker: null, cancelRenderReject: null, workerWaiters: null, outputUrl: null, cancelRequested: false,
   coverSeq: 0, titleEdited: false, artistEdited: false, albumEdited: false
 };
@@ -24,6 +28,8 @@ const player = new PlayerRenderer(refs.canvas, () => ({
   background: state.background, color: state.color, template: state.template,
   foregroundX: state.foregroundX, foregroundY: state.foregroundY, foregroundScale: state.foregroundScale,
   spectrumEnabled: state.spectrumEnabled, carouselDepth: state.carouselDepth, backgroundIntensity: state.backgroundIntensity,
+  blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
+  verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
   progress: state.duration ? Math.max(0, Math.min(1, (refs.audio ? refs.audio.currentTime - state.trimStart : state.current - state.trimStart) / (state.trimEnd - state.trimStart || 1))) : 0,
   current: Math.max(0, (refs.audio?.currentTime ?? state.current) - state.trimStart), duration: Math.max(0, state.trimEnd - state.trimStart),
   playing: state.playing, volume: state.volume
@@ -610,7 +616,8 @@ async function renderLocally(token, controller, worker, renderContext) {
   const ready = controller.wait('ready');
   const coverImage = state.coverFile.slice(0, state.coverFile.size, state.coverFile.type);
   const foregroundImage = state.foregroundFile?.slice(0, state.foregroundFile.size, state.foregroundFile.type) || null;
-  worker.postMessage({ type: 'start', config, cover: coverImage, foreground: foregroundImage });
+  const customBgImage = state.customBackgroundFile?.slice(0, state.customBackgroundFile.size, state.customBackgroundFile.type) || null;
+  worker.postMessage({ type: 'start', config, cover: coverImage, foreground: foregroundImage, customBackground: customBgImage });
   await ready;
   if (token.cancelled) throw abortError();
 
@@ -753,6 +760,7 @@ refs.coverDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter
 refs.coverInput.addEventListener('change', () => loadImageFile(refs.coverInput.files?.[0]));
 refs.coverChange.addEventListener('click', (event) => { event.stopPropagation(); refs.coverInput.click(); });
 refs.coverRemove.addEventListener('click', (event) => { event.stopPropagation(); removeCover(); });
+if (refs.customBgDrop && refs.customBgInput) { dropZones.push([refs.customBgDrop, refs.customBgInput, loadCustomBackgroundFile]); }
 if (refs.foregroundDrop && refs.foregroundInput) {
   refs.foregroundDrop.addEventListener('click', (event) => { if (!event.target.closest('button')) refs.foregroundInput.click(); });
   refs.foregroundDrop.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); refs.foregroundInput.click(); } });
@@ -892,3 +900,78 @@ syncRatioAvailability();
 syncCanvasSize();
 refs.volume.style.setProperty('--fill', '80%');
 drawWaveform(); updateButtons();
+
+function loadCustomBackgroundFile(file) {
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return;
+  state.customBackgroundFile = file;
+  if (state.customBackgroundUrl) URL.revokeObjectURL(state.customBackgroundUrl);
+  state.customBackgroundUrl = URL.createObjectURL(file);
+  if (refs.customBgThumb) refs.customBgThumb.src = state.customBackgroundUrl;
+  if (refs.customBgName) refs.customBgName.textContent = file.name;
+  if (refs.customBgSize) refs.customBgSize.textContent = formatBytes(file.size);
+  if (refs.customBgEmpty) refs.customBgEmpty.hidden = true;
+  if (refs.customBgFilled) refs.customBgFilled.hidden = false;
+  player.setCustomBackground(state.customBackgroundUrl);
+}
+
+function removeCustomBackground() {
+  state.customBackgroundFile = null;
+  if (state.customBackgroundUrl) {
+    URL.revokeObjectURL(state.customBackgroundUrl);
+    state.customBackgroundUrl = null;
+  }
+  if (refs.customBgInput) refs.customBgInput.value = '';
+  if (refs.customBgEmpty) refs.customBgEmpty.hidden = false;
+  if (refs.customBgFilled) refs.customBgFilled.hidden = true;
+  player.setCustomBackground(null);
+}
+
+if (refs.customBgDrop && refs.customBgInput) {
+  refs.customBgDrop.addEventListener('click', (event) => {
+    if (!event.target.closest('button')) refs.customBgInput.click();
+  });
+  refs.customBgDrop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      refs.customBgInput.click();
+    }
+  });
+  refs.customBgInput.addEventListener('change', () => loadCustomBackgroundFile(refs.customBgInput.files?.[0]));
+}
+if (refs.customBgRemove) {
+  refs.customBgRemove.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeCustomBackground();
+  });
+}
+if (refs.blueGlow) {
+  refs.blueGlow.addEventListener('input', () => {
+    state.blueGlow = Number(refs.blueGlow.value);
+    if (refs.blueGlowValue) refs.blueGlowValue.textContent = `${state.blueGlow}%`;
+    player.draw();
+  });
+}
+if (refs.glassOpacity) {
+  refs.glassOpacity.addEventListener('input', () => {
+    state.glassOpacity = Number(refs.glassOpacity.value);
+    if (refs.glassOpacityValue) refs.glassOpacityValue.textContent = `${state.glassOpacity}%`;
+    player.draw();
+  });
+}
+if (refs.glassBlur) {
+  refs.glassBlur.addEventListener('input', () => {
+    state.glassBlur = Number(refs.glassBlur.value);
+    if (refs.glassBlurValue) refs.glassBlurValue.textContent = `${state.glassBlur}%`;
+    player.draw();
+  });
+}
+if (refs.verifiedBadgeToggle) {
+  refs.verifiedBadgeToggle.addEventListener('change', () => {
+    state.verifiedBadge = refs.verifiedBadgeToggle.checked;
+    player.draw();
+  });
+}
+if (refs.canvas) {
+  refs.canvas.addEventListener('click', () => togglePlayback());
+}

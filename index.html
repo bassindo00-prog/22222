@@ -114,6 +114,7 @@
           <div class="design-group template-group"><div class="field-label-row"><span class="group-label">Template player</span><span class="label-hint">PILIH TAMPILAN</span></div><div class="template-options" role="group" aria-label="Template player">
             <button type="button" data-template="minimal" class="template-option selected" aria-pressed="true"><span class="template-preview minimal-preview"><span class="mini-cover"></span><span class="mini-lines"><i></i><i></i><i></i></span><span class="mini-controls"><i></i><i></i><i></i></span></span><b>Minimal Player</b><span>Player iPhone yang sekarang</span></button>
             <button type="button" data-template="spotify" class="template-option" aria-pressed="false"><span class="template-preview spotify-preview"><span class="spotify-mini-card far"></span><span class="spotify-mini-card side"></span><span class="spotify-mini-card selected"></span><span class="spotify-mini-card side right"></span><span class="spotify-mini-bar"></span></span><b>Spotify Carousel</b><span>Cover carousel dan floating player</span></button>
+              <button type="button" data-template="glass" class="template-option" aria-pressed="false"><span class="template-preview glass-preview"><span class="glass-mini-glow"></span><span class="glass-mini-card"><span class="glass-mini-art"></span><span class="glass-mini-lines"><i></i><i></i></span><span class="glass-mini-badge"></span><span class="glass-mini-bar"></span></span></span><b>Glass Music Player</b><span>Glassmorphism player dengan blue glow</span></button>
           </div>
             <label class="spectrum-toggle-row" for="spectrum-toggle"><span><strong>Audio spectrum</strong><small>Tampilkan gelombang audio di player</small></span><input id="spectrum-toggle" type="checkbox" aria-label="Tampilkan audio spectrum" /></label>
           </div>
@@ -121,6 +122,32 @@
           <div id="carousel-controls" class="carousel-controls" hidden>
             <div class="carousel-range"><label for="carousel-depth"><span>Kedalaman carousel</span><output id="carousel-depth-value">58%</output></label><input id="carousel-depth" type="range" min="0" max="100" value="58" aria-label="Kedalaman carousel" /></div>
             <div class="carousel-range"><label for="background-intensity"><span>Intensitas background</span><output id="background-intensity-value">68%</output></label><input id="background-intensity" type="range" min="0" max="100" value="68" aria-label="Intensitas background" /></div>
+          </div>
+
+          <div id="glass-controls" class="glass-controls" hidden>
+            <div class="glass-upload-box">
+              <div class="field-label-row"><span class="field-label">Custom Background</span><span class="label-hint">JPG · PNG · WEBP</span></div>
+              <div id="custom-bg-drop" class="custom-bg-drop" tabindex="0" role="button" aria-label="Upload background kustom">
+                <input id="custom-bg-input" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden" />
+                <div id="custom-bg-empty" class="custom-bg-empty">
+                  <span class="upload-glyph">⌑</span>
+                  <span><strong>Upload background</strong> atau drag & drop</span>
+                  <small>Maks. 20 MB · aspect fill otomatis</small>
+                </div>
+                <div id="custom-bg-filled" class="custom-bg-filled" hidden>
+                  <img id="custom-bg-thumb" alt="Preview background kustom" />
+                  <div>
+                    <strong id="custom-bg-name">background.jpg</strong>
+                    <small id="custom-bg-size"></small>
+                  </div>
+                  <button id="custom-bg-remove" class="icon-button" type="button" aria-label="Hapus background kustom">✕</button>
+                </div>
+              </div>
+            </div>
+            <div class="glass-range"><label for="blue-glow"><span>Intensitas Blue Glow</span><output id="blue-glow-value">75%</output></label><input id="blue-glow" type="range" min="0" max="100" value="75" aria-label="Intensitas Blue Glow" /></div>
+            <div class="glass-range"><label for="glass-opacity"><span>Opacity Glass Card</span><output id="glass-opacity-value">70%</output></label><input id="glass-opacity" type="range" min="10" max="100" value="70" aria-label="Opacity Glass Card" /></div>
+            <div class="glass-range"><label for="glass-blur"><span>Blur Background</span><output id="glass-blur-value">60%</output></label><input id="glass-blur" type="range" min="0" max="100" value="60" aria-label="Blur Background" /></div>
+            <label class="spectrum-toggle-row" for="verified-badge-toggle"><span><strong>Verification Badge</strong><small>Tampilkan tanda centang biru pada card</small></span><input id="verified-badge-toggle" type="checkbox" checked aria-label="Tampilkan Verification Badge" /></label>
           </div>
 
           <div class="design-group quality-group"><div class="field-label-row"><span class="group-label">Kualitas video</span><span class="label-hint">ENCODER BROWSER</span></div><div class="quality-options" role="group" aria-label="Kualitas video">

@@ -14,6 +14,7 @@ let output;
 let renderer;
 let coverBitmap;
 let foregroundBitmap;
+let customBackgroundBitmap;
 let audioSource;
 let videoSource;
 let frameState;
@@ -54,6 +55,11 @@ async function start(message) {
     spectrumEnabled: config.spectrumEnabled,
     carouselDepth: config.carouselDepth,
     backgroundIntensity: config.backgroundIntensity,
+    blueGlow: config.blueGlow,
+    glassOpacity: config.glassOpacity,
+    glassBlur: config.glassBlur,
+    verifiedBadge: config.verifiedBadge,
+    glassTag: config.glassTag,
     foregroundX: config.foregroundX,
     foregroundY: config.foregroundY,
     foregroundScale: config.foregroundScale,
@@ -74,6 +80,10 @@ async function start(message) {
   if (message.foreground) {
     foregroundBitmap = await createImageBitmap(message.foreground);
     renderer.setForeground(foregroundBitmap);
+  }
+  if (message.customBackground) {
+    customBackgroundBitmap = await createImageBitmap(message.customBackground);
+    renderer.setCustomBackground(customBackgroundBitmap);
   }
   renderer.setSize(config.width, config.height);
 
@@ -207,8 +217,9 @@ async function dispose() {
   try { videoSource?.close(); } catch {}
   try { coverBitmap?.close(); } catch {}
   try { foregroundBitmap?.close(); } catch {}
+  try { customBackgroundBitmap?.close(); } catch {}
   try { renderer?.modelBackground?.close(); } catch {}
-  audioSource = null; videoSource = null; coverBitmap = null; foregroundBitmap = null; renderer = null; output = null;
+  audioSource = null; videoSource = null; coverBitmap = null; foregroundBitmap = null; customBackgroundBitmap = null; renderer = null; output = null;
 }
 
 self.onmessage = async ({ data }) => {
