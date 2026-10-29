@@ -434,9 +434,6 @@ export class PlayerRenderer {
       this.drawVolume(cardX + pad, volumeY, cardW - pad * 2, s.volume, W, baseCtx);
     }
 
-    baseCtx.fillStyle = '#ffffff48'; baseCtx.font = `500 ${Math.min(W, H) * .012}px sans-serif`; baseCtx.textAlign = 'right'; baseCtx.textBaseline = 'alphabetic';
-    baseCtx.fillText('SONICFRAME', W * .96, H * .973);
-
     this.minimalBaseKey = key;
     this.minimalBaseCanvas = baseCanvas;
     return baseCanvas;
@@ -478,7 +475,6 @@ export class PlayerRenderer {
 
     if (s.template === 'spotify') {
       this.drawSpotify(s, W, H);
-      this.drawSignature(W, H);
       return;
     }
     if (s.template === 'iphone-model') {
@@ -972,9 +968,5 @@ export class PlayerRenderer {
     ctx.globalAlpha = 1;
   }
 
-  drawSignature(W, H) {
-    const ctx = this.ctx;
-    ctx.fillStyle = '#ffffff48'; ctx.font = `500 ${Math.min(W, H) * .012}px sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SONICFRAME', W * .96, H * .973);
-  }
+  drawSignature(W, H) {}
 }
