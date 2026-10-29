@@ -723,8 +723,6 @@ export class PlayerRenderer {
     ctx.fillStyle = shade;
     ctx.fillRect(0, 0, W, H);
 
-    this.drawBrandMark(W, H, palette);
-
     const cardWidth = Math.min(W * (portrait ? .52 : landscape ? .42 : .56), H * (portrait ? .29 : .42));
     const cardHeight = cardWidth * 1.30;
     const centerY = H * (portrait ? .49 : landscape ? .44 : .46);
@@ -743,28 +741,7 @@ export class PlayerRenderer {
     this.drawSpotifyPlayerBar(s, W, H, palette, portrait, landscape, time);
   }
 
-  drawBrandMark(W, H, palette) {
-    const ctx = this.ctx;
-    const centerX = W / 2;
-    const centerY = H * (H > W * 1.2 ? .115 : .105);
-    const unit = Math.min(W, H);
-    ctx.save();
-    ctx.fillStyle = toRgba(palette.primary, .92);
-    for (let index = 0; index < 4; index++) {
-      const barHeight = unit * (.009 + ((index + 1) % 3) * .004);
-      roundedRect(ctx, centerX - unit * .072 + index * unit * .009, centerY - barHeight / 2, unit * .004, barHeight, unit * .002);
-      ctx.fill();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,.9)';
-    ctx.font = `600 ${unit * .018}px sans-serif`;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText('SONICFRAME', centerX - unit * .027, centerY);
-    ctx.fillStyle = 'rgba(255,255,255,.55)';
-    ctx.font = `500 ${unit * .009}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('YOUR SOUND · YOUR SCENE', centerX, centerY + unit * .028);
-    ctx.restore();
-  }
+  drawBrandMark(W, H, palette) {}
 
   drawSpotifyCard(s, card, cardWidth, cardHeight, palette, time) {
     const ctx = this.ctx;
