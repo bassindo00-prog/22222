@@ -1,5 +1,5 @@
 import { formatBytes, formatTime, parseTime, readAudioMetadata } from './audio-utils.js';
-import { PlayerRenderer } from './player-renderer.js';
+import { PlayerRenderer, PHONE_AESTHETIC_DEFAULTS } from './player-renderer.js';
 
 const $ = (selector) => document.querySelector(selector);
 const refs = {
@@ -13,6 +13,61 @@ const refs = {
   customBgInput: $('#custom-bg-input'), customBgDrop: $('#custom-bg-drop'), customBgEmpty: $('#custom-bg-empty'), customBgFilled: $('#custom-bg-filled'), customBgThumb: $('#custom-bg-thumb'), customBgName: $('#custom-bg-name'), customBgSize: $('#custom-bg-size'), customBgRemove: $('#custom-bg-remove'),
   purpleControls: $('#purple-glass-controls'), purpleBgInput: $('#purple-bg-input'), purpleBgDrop: $('#purple-bg-drop'), purpleBgEmpty: $('#purple-bg-empty'), purpleBgFilled: $('#purple-bg-filled'), purpleBgThumb: $('#purple-bg-thumb'), purpleBgName: $('#purple-bg-name'), purpleBgSize: $('#purple-bg-size'), purpleBgRemove: $('#purple-bg-remove'), purpleGlow: $('#purple-glow'), purpleGlowValue: $('#purple-glow-value'), purpleOpacity: $('#purple-opacity'), purpleOpacityValue: $('#purple-opacity-value'), marqueeSpeed: $('#marquee-speed'), marqueeSpeedValue: $('#marquee-speed-value'), marqueeToggle: $('#marquee-toggle'),
   borderLightControls: $('#border-light-controls'), borderLightToggle: $('#border-light-toggle'), borderLightColor: $('#border-light-color'), borderLightColorValue: $('#border-light-color-value'), borderLightDirection: $('#border-light-direction'), borderLightThickness: $('#border-light-thickness'), borderLightThicknessValue: $('#border-light-thickness-value'), borderLightGlow: $('#border-light-glow'), borderLightGlowValue: $('#border-light-glow-value'), borderLightDuration: $('#border-light-duration'), borderLightDurationValue: $('#border-light-duration-value'), borderLightTrail: $('#border-light-trail'), borderLightTrailValue: $('#border-light-trail-value'),
+  phoneControls: $('#phone-aesthetic-controls'),
+  phonePlayerTheme: $('#phone-player-theme'),
+  phonePlayerBg: $('#phone-player-bg'),
+  phonePlayerBgValue: $('#phone-player-bg-value'),
+  phonePlayerText: $('#phone-player-text'),
+  phonePlayerTextValue: $('#phone-player-text-value'),
+  phoneProgressColor: $('#phone-progress-color'),
+  phoneProgressColorValue: $('#phone-progress-color-value'),
+  phoneControlsToggle: $('#phone-controls-toggle'),
+  phoneTimerToggle: $('#phone-timer-toggle'),
+  phoneMarqueeToggle: $('#phone-marquee-toggle'),
+  phoneSpectrumToggle: $('#phone-spectrum-toggle'),
+  phoneMarqueeSpeed: $('#phone-marquee-speed'),
+  phoneMarqueeSpeedValue: $('#phone-marquee-speed-value'),
+  phoneScreenGlow: $('#phone-screen-glow'),
+  phoneScreenGlowValue: $('#phone-screen-glow-value'),
+  phoneBgDrop: $('#phone-bg-drop'),
+  phoneBgInput: $('#phone-bg-input'),
+  phoneBgEmpty: $('#phone-bg-empty'),
+  phoneBgFilled: $('#phone-bg-filled'),
+  phoneBgThumb: $('#phone-bg-thumb'),
+  phoneBgName: $('#phone-bg-name'),
+  phoneBgSize: $('#phone-bg-size'),
+  phoneBgRemove: $('#phone-bg-remove'),
+  phoneResetBg: $('#phone-reset-bg'),
+  phoneBgBrightness: $('#phone-bg-brightness'),
+  phoneBgBrightnessValue: $('#phone-bg-brightness-value'),
+  phoneBgSaturation: $('#phone-bg-saturation'),
+  phoneBgSaturationValue: $('#phone-bg-saturation-value'),
+  phoneBgBlur: $('#phone-bg-blur'),
+  phoneBgBlurValue: $('#phone-bg-blur-value'),
+  phoneBgPosX: $('#phone-bg-pos-x'),
+  phoneBgPosXValue: $('#phone-bg-pos-x-value'),
+  phoneBgPosY: $('#phone-bg-pos-y'),
+  phoneBgPosYValue: $('#phone-bg-pos-y-value'),
+  phoneBgScale: $('#phone-bg-scale'),
+  phoneBgScaleValue: $('#phone-bg-scale-value'),
+  phoneCalibrateToggle: $('#phone-calibrate-toggle'),
+  phoneTlX: $('#phone-tl-x'),
+  phoneTlXVal: $('#phone-tl-x-val'),
+  phoneTlY: $('#phone-tl-y'),
+  phoneTlYVal: $('#phone-tl-y-val'),
+  phoneTrX: $('#phone-tr-x'),
+  phoneTrXVal: $('#phone-tr-x-val'),
+  phoneTrY: $('#phone-tr-y'),
+  phoneTrYVal: $('#phone-tr-y-val'),
+  phoneBrX: $('#phone-br-x'),
+  phoneBrXVal: $('#phone-br-x-val'),
+  phoneBrY: $('#phone-br-y'),
+  phoneBrYVal: $('#phone-br-y-val'),
+  phoneBlX: $('#phone-bl-x'),
+  phoneBlXVal: $('#phone-bl-x-val'),
+  phoneBlY: $('#phone-bl-y'),
+  phoneBlYVal: $('#phone-bl-y-val'),
+  phoneResetCalibration: $('#phone-reset-calibration'),
   renderButton: $('#render-button'), cancelRender: $('#cancel-render'), memoryWarning: $('#memory-warning'), renderError: $('#render-error'), stateBadge: $('#render-state-badge'), progressRing: $('#progress-ring'), ringProgress: $('#ring-progress'), progressPercent: $('#progress-percent'), progressTitle: $('#progress-title'), progressDescription: $('#progress-description'), linearProgress: $('#linear-progress'), progressDetail: $('#progress-detail'), resultState: $('#result-state'), resultEmpty: $('#result-empty'), resultContent: $('#result-content'), outputVideo: $('#output-video'), outputFilename: $('#output-filename'), outputMeta: $('#output-meta'), download: $('#download-button')
 };
 
@@ -23,6 +78,33 @@ const state = {
   blueGlow: 75, glassOpacity: 70, glassBlur: 60, verifiedBadge: true, glassTag: '+ Creativestyle', customBackgroundFile: null, customBackgroundUrl: null,
   purpleGlow: 80, purpleGlassOpacity: 75, marqueeEnabled: true, marqueeSpeed: 45, focusTitle: 'Temps', focusSubtitle: 'pour soi',
   borderLightEnabled: true, borderLightColor: '#ffffff', borderLightThickness: 1.5, borderLightGlow: 60, borderLightDuration: 6.0, borderLightTrail: 15, borderLightDirection: 'cw',
+  phonePlayerTheme: 'red',
+  phonePlayerBg: '#d32626',
+  phonePlayerText: '#ffffff',
+  phoneProgressColor: '#ffffff',
+  phoneControlsEnabled: true,
+  phoneTimerEnabled: true,
+  phoneMarqueeEnabled: true,
+  phoneSpectrumEnabled: true,
+  phoneMarqueeSpeed: 45,
+  phoneScreenGlow: 40,
+  phoneCustomBackgroundFile: null,
+  phoneCustomBackgroundUrl: null,
+  phoneBgBrightness: 100,
+  phoneBgSaturation: 100,
+  phoneBgBlur: 0,
+  phoneBgPosX: 0,
+  phoneBgPosY: 0,
+  phoneBgScale: 100,
+  phoneCalibrating: false,
+  phoneScreenTLX: PHONE_AESTHETIC_DEFAULTS.tl.x,
+  phoneScreenTLY: PHONE_AESTHETIC_DEFAULTS.tl.y,
+  phoneScreenTRX: PHONE_AESTHETIC_DEFAULTS.tr.x,
+  phoneScreenTRY: PHONE_AESTHETIC_DEFAULTS.tr.y,
+  phoneScreenBRX: PHONE_AESTHETIC_DEFAULTS.br.x,
+  phoneScreenBRY: PHONE_AESTHETIC_DEFAULTS.br.y,
+  phoneScreenBLX: PHONE_AESTHETIC_DEFAULTS.bl.x,
+  phoneScreenBLY: PHONE_AESTHETIC_DEFAULTS.bl.y,
   audioContext: null, analyser: null, gain: null, sourceNode: null, frequency: null, rendering: false, renderWorker: null, cancelRenderReject: null, workerWaiters: null, outputUrl: null, cancelRequested: false,
   coverSeq: 0, titleEdited: false, artistEdited: false, albumEdited: false
 };
@@ -44,6 +126,31 @@ const player = new PlayerRenderer(refs.canvas, () => ({
   verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
     purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity, marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed, focusTitle: state.focusTitle, focusSubtitle: state.focusSubtitle,
     borderLightEnabled: state.borderLightEnabled, borderLightColor: state.borderLightColor, borderLightThickness: state.borderLightThickness, borderLightGlow: state.borderLightGlow, borderLightDuration: state.borderLightDuration, borderLightTrail: state.borderLightTrail, borderLightDirection: state.borderLightDirection,
+    phonePlayerTheme: state.phonePlayerTheme,
+    phonePlayerBg: state.phonePlayerBg,
+    phonePlayerText: state.phonePlayerText,
+    phoneProgressColor: state.phoneProgressColor,
+    phoneControlsEnabled: state.phoneControlsEnabled,
+    phoneTimerEnabled: state.phoneTimerEnabled,
+    phoneMarqueeEnabled: state.phoneMarqueeEnabled,
+    phoneSpectrumEnabled: state.phoneSpectrumEnabled,
+    phoneMarqueeSpeed: state.phoneMarqueeSpeed,
+    phoneScreenGlow: state.phoneScreenGlow,
+    phoneBgBrightness: state.phoneBgBrightness,
+    phoneBgSaturation: state.phoneBgSaturation,
+    phoneBgBlur: state.phoneBgBlur,
+    phoneBgPosX: state.phoneBgPosX,
+    phoneBgPosY: state.phoneBgPosY,
+    phoneBgScale: state.phoneBgScale,
+    phoneCalibrating: state.phoneCalibrating,
+    phoneScreenTLX: state.phoneScreenTLX,
+    phoneScreenTLY: state.phoneScreenTLY,
+    phoneScreenTRX: state.phoneScreenTRX,
+    phoneScreenTRY: state.phoneScreenTRY,
+    phoneScreenBRX: state.phoneScreenBRX,
+    phoneScreenBRY: state.phoneScreenBRY,
+    phoneScreenBLX: state.phoneScreenBLX,
+    phoneScreenBLY: state.phoneScreenBLY,
   progress: state.duration ? Math.max(0, Math.min(1, (refs.audio ? refs.audio.currentTime - state.trimStart : state.current - state.trimStart) / (state.trimEnd - state.trimStart || 1))) : 0,
   current: Math.max(0, (refs.audio?.currentTime ?? state.current) - state.trimStart), duration: Math.max(0, state.trimEnd - state.trimStart),
   playing: state.playing, volume: state.volume
@@ -133,13 +240,15 @@ function syncTemplateControls() {
   const carousel = state.template === 'spotify';
   const glass = state.template === 'glass';
   const purpleGlass = state.template === 'purple-glass';
+  const phoneAesthetic = state.template === 'phone-aesthetic';
   refs.carouselControls.hidden = !carousel;
   if (refs.glassControls) refs.glassControls.hidden = !glass;
   if (refs.purpleControls) refs.purpleControls.hidden = !purpleGlass;
+  if (refs.phoneControls) refs.phoneControls.hidden = !phoneAesthetic;
   if (refs.foregroundControls) refs.foregroundControls.hidden = true;
   refs.coverBackgroundLabel.textContent = carousel ? 'Cover-derived' : 'Blur';
-  document.querySelectorAll('.background-option').forEach((button) => { button.disabled = false; });
-  refs.spectrumToggle.closest('.spectrum-toggle-row').hidden = false;
+  document.querySelectorAll('.background-option').forEach((button) => { button.disabled = phoneAesthetic; });
+  refs.spectrumToggle.closest('.spectrum-toggle-row').hidden = phoneAesthetic;
   refs.spectrumToggle.checked = state.spectrumEnabled;
   refs.carouselDepthValue.textContent = `${state.carouselDepth}%`;
   refs.backgroundIntensityValue.textContent = `${state.backgroundIntensity}%`;
@@ -165,6 +274,58 @@ function syncTemplateControls() {
   if (refs.borderLightDurationValue) refs.borderLightDurationValue.textContent = `${Number(state.borderLightDuration).toFixed(1)} s`;
   if (refs.borderLightTrail) refs.borderLightTrail.value = state.borderLightTrail;
   if (refs.borderLightTrailValue) refs.borderLightTrailValue.textContent = `${state.borderLightTrail}%`;
+
+  if (phoneAesthetic) {
+    player.ensurePhoneAestheticBackground();
+    if (refs.phonePlayerTheme) refs.phonePlayerTheme.value = state.phonePlayerTheme;
+    if (refs.phonePlayerBg) refs.phonePlayerBg.value = state.phonePlayerBg;
+    if (refs.phonePlayerBgValue) refs.phonePlayerBgValue.textContent = state.phonePlayerBg.toUpperCase();
+    if (refs.phonePlayerText) refs.phonePlayerText.value = state.phonePlayerText;
+    if (refs.phonePlayerTextValue) refs.phonePlayerTextValue.textContent = state.phonePlayerText.toUpperCase();
+    if (refs.phoneProgressColor) refs.phoneProgressColor.value = state.phoneProgressColor;
+    if (refs.phoneProgressColorValue) refs.phoneProgressColorValue.textContent = state.phoneProgressColor.toUpperCase();
+    if (refs.phoneControlsToggle) refs.phoneControlsToggle.checked = state.phoneControlsEnabled;
+    if (refs.phoneTimerToggle) refs.phoneTimerToggle.checked = state.phoneTimerEnabled;
+    if (refs.phoneMarqueeToggle) refs.phoneMarqueeToggle.checked = state.phoneMarqueeEnabled;
+    if (refs.phoneSpectrumToggle) refs.phoneSpectrumToggle.checked = state.phoneSpectrumEnabled;
+    if (refs.phoneMarqueeSpeed) refs.phoneMarqueeSpeed.value = state.phoneMarqueeSpeed;
+    if (refs.phoneMarqueeSpeedValue) refs.phoneMarqueeSpeedValue.textContent = `${state.phoneMarqueeSpeed} px/s`;
+    if (refs.phoneScreenGlow) refs.phoneScreenGlow.value = state.phoneScreenGlow;
+    if (refs.phoneScreenGlowValue) refs.phoneScreenGlowValue.textContent = `${state.phoneScreenGlow}%`;
+    if (refs.phoneBgBrightness) refs.phoneBgBrightness.value = state.phoneBgBrightness;
+    if (refs.phoneBgBrightnessValue) refs.phoneBgBrightnessValue.textContent = `${state.phoneBgBrightness}%`;
+    if (refs.phoneBgSaturation) refs.phoneBgSaturation.value = state.phoneBgSaturation;
+    if (refs.phoneBgSaturationValue) refs.phoneBgSaturationValue.textContent = `${state.phoneBgSaturation}%`;
+    if (refs.phoneBgBlur) refs.phoneBgBlur.value = state.phoneBgBlur;
+    if (refs.phoneBgBlurValue) refs.phoneBgBlurValue.textContent = `${state.phoneBgBlur} px`;
+    if (refs.phoneBgPosX) refs.phoneBgPosX.value = state.phoneBgPosX;
+    if (refs.phoneBgPosXValue) refs.phoneBgPosXValue.textContent = `${state.phoneBgPosX}%`;
+    if (refs.phoneBgPosY) refs.phoneBgPosY.value = state.phoneBgPosY;
+    if (refs.phoneBgPosYValue) refs.phoneBgPosYValue.textContent = `${state.phoneBgPosY}%`;
+    if (refs.phoneBgScale) refs.phoneBgScale.value = state.phoneBgScale;
+    if (refs.phoneBgScaleValue) refs.phoneBgScaleValue.textContent = `${state.phoneBgScale}%`;
+    if (refs.phoneCalibrateToggle) refs.phoneCalibrateToggle.checked = state.phoneCalibrating;
+
+    if (refs.phoneTlX) refs.phoneTlX.value = (state.phoneScreenTLX * 100).toFixed(1);
+    if (refs.phoneTlXVal) refs.phoneTlXVal.textContent = `${(state.phoneScreenTLX * 100).toFixed(1)}%`;
+    if (refs.phoneTlY) refs.phoneTlY.value = (state.phoneScreenTLY * 100).toFixed(1);
+    if (refs.phoneTlYVal) refs.phoneTlYVal.textContent = `${(state.phoneScreenTLY * 100).toFixed(1)}%`;
+
+    if (refs.phoneTrX) refs.phoneTrX.value = (state.phoneScreenTRX * 100).toFixed(1);
+    if (refs.phoneTrXVal) refs.phoneTrXVal.textContent = `${(state.phoneScreenTRX * 100).toFixed(1)}%`;
+    if (refs.phoneTrY) refs.phoneTrY.value = (state.phoneScreenTRY * 100).toFixed(1);
+    if (refs.phoneTrYVal) refs.phoneTrYVal.textContent = `${(state.phoneScreenTRY * 100).toFixed(1)}%`;
+
+    if (refs.phoneBrX) refs.phoneBrX.value = (state.phoneScreenBRX * 100).toFixed(1);
+    if (refs.phoneBrXVal) refs.phoneBrXVal.textContent = `${(state.phoneScreenBRX * 100).toFixed(1)}%`;
+    if (refs.phoneBrY) refs.phoneBrY.value = (state.phoneScreenBRY * 100).toFixed(1);
+    if (refs.phoneBrYVal) refs.phoneBrYVal.textContent = `${(state.phoneScreenBRY * 100).toFixed(1)}%`;
+
+    if (refs.phoneBlX) refs.phoneBlX.value = (state.phoneScreenBLX * 100).toFixed(1);
+    if (refs.phoneBlXVal) refs.phoneBlXVal.textContent = `${(state.phoneScreenBLX * 100).toFixed(1)}%`;
+    if (refs.phoneBlY) refs.phoneBlY.value = (state.phoneScreenBLY * 100).toFixed(1);
+    if (refs.phoneBlYVal) refs.phoneBlYVal.textContent = `${(state.phoneScreenBLY * 100).toFixed(1)}%`;
+  }
 }
 
 function syncRatioAvailability() {
@@ -651,13 +812,49 @@ async function renderLocally(token, controller, worker, renderContext) {
     album: refs.album.value.trim(),
     background: state.background, color: state.color, template: state.template,
     foregroundX: state.foregroundX, foregroundY: state.foregroundY, foregroundScale: state.foregroundScale,
-    spectrumEnabled: state.spectrumEnabled, carouselDepth: state.carouselDepth, backgroundIntensity: state.backgroundIntensity
+    spectrumEnabled: state.spectrumEnabled, carouselDepth: state.carouselDepth, backgroundIntensity: state.backgroundIntensity,
+    blueGlow: state.blueGlow, glassOpacity: state.glassOpacity, glassBlur: state.glassBlur,
+    verifiedBadge: state.verifiedBadge, glassTag: state.glassTag,
+    purpleGlow: state.purpleGlow, purpleGlassOpacity: state.purpleGlassOpacity,
+    marqueeEnabled: state.marqueeEnabled, marqueeSpeed: state.marqueeSpeed,
+    borderLightEnabled: state.borderLightEnabled, borderLightColor: state.borderLightColor,
+    borderLightThickness: state.borderLightThickness, borderLightGlow: state.borderLightGlow,
+    borderLightDuration: state.borderLightDuration, borderLightTrail: state.borderLightTrail,
+    borderLightDirection: state.borderLightDirection,
+    phonePlayerTheme: state.phonePlayerTheme,
+    phonePlayerBg: state.phonePlayerBg,
+    phonePlayerText: state.phonePlayerText,
+    phoneProgressColor: state.phoneProgressColor,
+    phoneControlsEnabled: state.phoneControlsEnabled,
+    phoneTimerEnabled: state.phoneTimerEnabled,
+    phoneMarqueeEnabled: state.phoneMarqueeEnabled,
+    phoneSpectrumEnabled: state.phoneSpectrumEnabled,
+    phoneMarqueeSpeed: state.phoneMarqueeSpeed,
+    phoneScreenGlow: state.phoneScreenGlow,
+    phoneBgBrightness: state.phoneBgBrightness,
+    phoneBgSaturation: state.phoneBgSaturation,
+    phoneBgBlur: state.phoneBgBlur,
+    phoneBgPosX: state.phoneBgPosX,
+    phoneBgPosY: state.phoneBgPosY,
+    phoneBgScale: state.phoneBgScale,
+    phoneScreenTLX: state.phoneScreenTLX,
+    phoneScreenTLY: state.phoneScreenTLY,
+    phoneScreenTRX: state.phoneScreenTRX,
+    phoneScreenTRY: state.phoneScreenTRY,
+    phoneScreenBRX: state.phoneScreenBRX,
+    phoneScreenBRY: state.phoneScreenBRY,
+    phoneScreenBLX: state.phoneScreenBLX,
+    phoneScreenBLY: state.phoneScreenBLY
   };
   const ready = controller.wait('ready');
   const coverImage = state.coverFile.slice(0, state.coverFile.size, state.coverFile.type);
   const foregroundImage = state.foregroundFile?.slice(0, state.foregroundFile.size, state.foregroundFile.type) || null;
   const customBgImage = state.customBackgroundFile?.slice(0, state.customBackgroundFile.size, state.customBackgroundFile.type) || null;
-  worker.postMessage({ type: 'start', config, cover: coverImage, foreground: foregroundImage, customBackground: customBgImage });
+  const phoneCustomBgImage = state.phoneCustomBackgroundFile?.slice(0, state.phoneCustomBackgroundFile.size, state.phoneCustomBackgroundFile.type) || null;
+  worker.postMessage({
+    type: 'start', config, cover: coverImage, foreground: foregroundImage,
+    customBackground: customBgImage, phoneCustomBackground: phoneCustomBgImage
+  });
   await ready;
   if (token.cancelled) throw abortError();
 
@@ -1111,6 +1308,236 @@ if (refs.borderLightTrail) {
   refs.borderLightTrail.addEventListener('input', () => {
     state.borderLightTrail = Number(refs.borderLightTrail.value);
     if (refs.borderLightTrailValue) refs.borderLightTrailValue.textContent = `${state.borderLightTrail}%`;
+    player.draw();
+  });
+}
+
+function loadPhoneCustomBgFile(file) {
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return;
+  state.phoneCustomBackgroundFile = file;
+  if (state.phoneCustomBackgroundUrl) URL.revokeObjectURL(state.phoneCustomBackgroundUrl);
+  state.phoneCustomBackgroundUrl = URL.createObjectURL(file);
+  if (refs.phoneBgThumb) refs.phoneBgThumb.src = state.phoneCustomBackgroundUrl;
+  if (refs.phoneBgName) refs.phoneBgName.textContent = file.name;
+  if (refs.phoneBgSize) refs.phoneBgSize.textContent = formatBytes(file.size);
+  if (refs.phoneBgEmpty) refs.phoneBgEmpty.hidden = true;
+  if (refs.phoneBgFilled) refs.phoneBgFilled.hidden = false;
+  player.setPhoneCustomBackground(state.phoneCustomBackgroundUrl);
+}
+
+function removePhoneCustomBg() {
+  state.phoneCustomBackgroundFile = null;
+  if (state.phoneCustomBackgroundUrl) {
+    URL.revokeObjectURL(state.phoneCustomBackgroundUrl);
+    state.phoneCustomBackgroundUrl = null;
+  }
+  if (refs.phoneBgInput) refs.phoneBgInput.value = '';
+  if (refs.phoneBgEmpty) refs.phoneBgEmpty.hidden = false;
+  if (refs.phoneBgFilled) refs.phoneBgFilled.hidden = true;
+  player.setPhoneCustomBackground(null);
+}
+
+if (refs.phoneBgDrop && refs.phoneBgInput) {
+  refs.phoneBgDrop.addEventListener('click', (event) => {
+    if (!event.target.closest('button')) refs.phoneBgInput.click();
+  });
+  refs.phoneBgDrop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      refs.phoneBgInput.click();
+    }
+  });
+  refs.phoneBgInput.addEventListener('change', () => loadPhoneCustomBgFile(refs.phoneBgInput.files?.[0]));
+}
+if (refs.phoneBgRemove) {
+  refs.phoneBgRemove.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removePhoneCustomBg();
+  });
+}
+if (refs.phoneResetBg) {
+  refs.phoneResetBg.addEventListener('click', () => {
+    removePhoneCustomBg();
+    state.phoneBgBrightness = 100;
+    state.phoneBgSaturation = 100;
+    state.phoneBgBlur = 0;
+    state.phoneBgPosX = 0;
+    state.phoneBgPosY = 0;
+    state.phoneBgScale = 100;
+    syncTemplateControls();
+    player.draw();
+  });
+}
+
+if (refs.phonePlayerTheme) {
+  refs.phonePlayerTheme.addEventListener('change', () => {
+    state.phonePlayerTheme = refs.phonePlayerTheme.value;
+    if (state.phonePlayerTheme === 'red') {
+      state.phonePlayerBg = '#d32626';
+      state.phonePlayerText = '#ffffff';
+      state.phoneProgressColor = '#ffffff';
+    } else if (state.phonePlayerTheme === 'dark') {
+      state.phonePlayerBg = '#0e0f14';
+      state.phonePlayerText = '#f2f3f7';
+      state.phoneProgressColor = '#ffffff';
+    } else if (state.phonePlayerTheme === 'retro') {
+      state.phonePlayerBg = '#2c1c11';
+      state.phonePlayerText = '#f7e7c4';
+      state.phoneProgressColor = '#e6a147';
+    }
+    syncTemplateControls();
+    player.draw();
+  });
+}
+
+if (refs.phonePlayerBg) {
+  refs.phonePlayerBg.addEventListener('input', () => {
+    state.phonePlayerBg = refs.phonePlayerBg.value;
+    state.phonePlayerTheme = 'custom';
+    if (refs.phonePlayerTheme) refs.phonePlayerTheme.value = 'custom';
+    if (refs.phonePlayerBgValue) refs.phonePlayerBgValue.textContent = state.phonePlayerBg.toUpperCase();
+    player.draw();
+  });
+}
+if (refs.phonePlayerText) {
+  refs.phonePlayerText.addEventListener('input', () => {
+    state.phonePlayerText = refs.phonePlayerText.value;
+    state.phonePlayerTheme = 'custom';
+    if (refs.phonePlayerTheme) refs.phonePlayerTheme.value = 'custom';
+    if (refs.phonePlayerTextValue) refs.phonePlayerTextValue.textContent = state.phonePlayerText.toUpperCase();
+    player.draw();
+  });
+}
+if (refs.phoneProgressColor) {
+  refs.phoneProgressColor.addEventListener('input', () => {
+    state.phoneProgressColor = refs.phoneProgressColor.value;
+    state.phonePlayerTheme = 'custom';
+    if (refs.phonePlayerTheme) refs.phonePlayerTheme.value = 'custom';
+    if (refs.phoneProgressColorValue) refs.phoneProgressColorValue.textContent = state.phoneProgressColor.toUpperCase();
+    player.draw();
+  });
+}
+
+if (refs.phoneControlsToggle) {
+  refs.phoneControlsToggle.addEventListener('change', () => {
+    state.phoneControlsEnabled = refs.phoneControlsToggle.checked;
+    player.draw();
+  });
+}
+if (refs.phoneTimerToggle) {
+  refs.phoneTimerToggle.addEventListener('change', () => {
+    state.phoneTimerEnabled = refs.phoneTimerToggle.checked;
+    player.draw();
+  });
+}
+if (refs.phoneMarqueeToggle) {
+  refs.phoneMarqueeToggle.addEventListener('change', () => {
+    state.phoneMarqueeEnabled = refs.phoneMarqueeToggle.checked;
+    player.draw();
+  });
+}
+if (refs.phoneSpectrumToggle) {
+  refs.phoneSpectrumToggle.addEventListener('change', () => {
+    state.phoneSpectrumEnabled = refs.phoneSpectrumToggle.checked;
+    player.draw();
+  });
+}
+if (refs.phoneMarqueeSpeed) {
+  refs.phoneMarqueeSpeed.addEventListener('input', () => {
+    state.phoneMarqueeSpeed = Number(refs.phoneMarqueeSpeed.value);
+    if (refs.phoneMarqueeSpeedValue) refs.phoneMarqueeSpeedValue.textContent = `${state.phoneMarqueeSpeed} px/s`;
+    player.draw();
+  });
+}
+if (refs.phoneScreenGlow) {
+  refs.phoneScreenGlow.addEventListener('input', () => {
+    state.phoneScreenGlow = Number(refs.phoneScreenGlow.value);
+    if (refs.phoneScreenGlowValue) refs.phoneScreenGlowValue.textContent = `${state.phoneScreenGlow}%`;
+    player.draw();
+  });
+}
+
+if (refs.phoneBgBrightness) {
+  refs.phoneBgBrightness.addEventListener('input', () => {
+    state.phoneBgBrightness = Number(refs.phoneBgBrightness.value);
+    if (refs.phoneBgBrightnessValue) refs.phoneBgBrightnessValue.textContent = `${state.phoneBgBrightness}%`;
+    player.draw();
+  });
+}
+if (refs.phoneBgSaturation) {
+  refs.phoneBgSaturation.addEventListener('input', () => {
+    state.phoneBgSaturation = Number(refs.phoneBgSaturation.value);
+    if (refs.phoneBgSaturationValue) refs.phoneBgSaturationValue.textContent = `${state.phoneBgSaturation}%`;
+    player.draw();
+  });
+}
+if (refs.phoneBgBlur) {
+  refs.phoneBgBlur.addEventListener('input', () => {
+    state.phoneBgBlur = Number(refs.phoneBgBlur.value);
+    if (refs.phoneBgBlurValue) refs.phoneBgBlurValue.textContent = `${state.phoneBgBlur} px`;
+    player.draw();
+  });
+}
+if (refs.phoneBgPosX) {
+  refs.phoneBgPosX.addEventListener('input', () => {
+    state.phoneBgPosX = Number(refs.phoneBgPosX.value);
+    if (refs.phoneBgPosXValue) refs.phoneBgPosXValue.textContent = `${state.phoneBgPosX}%`;
+    player.draw();
+  });
+}
+if (refs.phoneBgPosY) {
+  refs.phoneBgPosY.addEventListener('input', () => {
+    state.phoneBgPosY = Number(refs.phoneBgPosY.value);
+    if (refs.phoneBgPosYValue) refs.phoneBgPosYValue.textContent = `${state.phoneBgPosY}%`;
+    player.draw();
+  });
+}
+if (refs.phoneBgScale) {
+  refs.phoneBgScale.addEventListener('input', () => {
+    state.phoneBgScale = Number(refs.phoneBgScale.value);
+    if (refs.phoneBgScaleValue) refs.phoneBgScaleValue.textContent = `${state.phoneBgScale}%`;
+    player.draw();
+  });
+}
+
+if (refs.phoneCalibrateToggle) {
+  refs.phoneCalibrateToggle.addEventListener('change', () => {
+    state.phoneCalibrating = refs.phoneCalibrateToggle.checked;
+    player.draw();
+  });
+}
+
+const setupCornerSlider = (inputEl, valEl, propKey) => {
+  if (inputEl) {
+    inputEl.addEventListener('input', () => {
+      const v = Number(inputEl.value);
+      state[propKey] = v / 100;
+      if (valEl) valEl.textContent = `${v.toFixed(1)}%`;
+      player.draw();
+    });
+  }
+};
+setupCornerSlider(refs.phoneTlX, refs.phoneTlXVal, 'phoneScreenTLX');
+setupCornerSlider(refs.phoneTlY, refs.phoneTlYVal, 'phoneScreenTLY');
+setupCornerSlider(refs.phoneTrX, refs.phoneTrXVal, 'phoneScreenTRX');
+setupCornerSlider(refs.phoneTrY, refs.phoneTrYVal, 'phoneScreenTRY');
+setupCornerSlider(refs.phoneBrX, refs.phoneBrXVal, 'phoneScreenBRX');
+setupCornerSlider(refs.phoneBrY, refs.phoneBrYVal, 'phoneScreenBRY');
+setupCornerSlider(refs.phoneBlX, refs.phoneBlXVal, 'phoneScreenBLX');
+setupCornerSlider(refs.phoneBlY, refs.phoneBlYVal, 'phoneScreenBLY');
+
+if (refs.phoneResetCalibration) {
+  refs.phoneResetCalibration.addEventListener('click', () => {
+    state.phoneScreenTLX = PHONE_AESTHETIC_DEFAULTS.tl.x;
+    state.phoneScreenTLY = PHONE_AESTHETIC_DEFAULTS.tl.y;
+    state.phoneScreenTRX = PHONE_AESTHETIC_DEFAULTS.tr.x;
+    state.phoneScreenTRY = PHONE_AESTHETIC_DEFAULTS.tr.y;
+    state.phoneScreenBRX = PHONE_AESTHETIC_DEFAULTS.br.x;
+    state.phoneScreenBRY = PHONE_AESTHETIC_DEFAULTS.br.y;
+    state.phoneScreenBLX = PHONE_AESTHETIC_DEFAULTS.bl.x;
+    state.phoneScreenBLY = PHONE_AESTHETIC_DEFAULTS.bl.y;
+    syncTemplateControls();
     player.draw();
   });
 }

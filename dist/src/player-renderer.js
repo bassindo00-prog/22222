@@ -13,9 +13,22 @@ const IPHONE_SCREEN_CORNERS = [
   { x: .437, y: .592 }, { x: .023, y: .570 }
 ];
 
+export const PHONE_AESTHETIC_DEFAULTS = {
+  tl: { x: 0.4905, y: 0.4517 },
+  tr: { x: 0.6927, y: 0.4746 },
+  br: { x: 0.6137, y: 0.7300 },
+  bl: { x: 0.4002, y: 0.7061 }
+};
+
 export async function loadModelBackground() {
   const response = await fetch(new URL('./assets/iphone-model-background.png', import.meta.url));
   if (!response.ok) throw new Error('Latar template iPhone tidak dapat dimuat dari aset lokal.');
+  return createImageBitmap(await response.blob());
+}
+
+export async function loadPhoneAestheticBackground() {
+  const response = await fetch(new URL('./assets/phone-aesthetic-clean.jpg', import.meta.url));
+  if (!response.ok) throw new Error('Latar template Phone Music Aesthetic tidak dapat dimuat dari aset lokal.');
   return createImageBitmap(await response.blob());
 }
 
@@ -60,7 +73,38 @@ function drawMappedTriangle(ctx, image, source, target) {
   ctx.restore();
 }
 
-function drawPerspectiveImage(ctx, image, corners, columns = 18, rows = 28) {
+function tracePerspectiveRoundedRect(ctx, project, ru = 0.082, rv = 0.038) {
+  ctx.beginPath();
+  const steps = 8;
+  ctx.moveTo(project(ru, 0).x, project(ru, 0).y);
+  ctx.lineTo(project(1 - ru, 0).x, project(1 - ru, 0).y);
+  for (let i = 1; i <= steps; i++) {
+    const angle = -Math.PI / 2 + (Math.PI / 2) * (i / steps);
+    const pt = project(1 - ru + ru * Math.cos(angle), rv + rv * Math.sin(angle));
+    ctx.lineTo(pt.x, pt.y);
+  }
+  ctx.lineTo(project(1, 1 - rv).x, project(1, 1 - rv).y);
+  for (let i = 1; i <= steps; i++) {
+    const angle = (Math.PI / 2) * (i / steps);
+    const pt = project(1 - ru + ru * Math.cos(angle), 1 - rv + rv * Math.sin(angle));
+    ctx.lineTo(pt.x, pt.y);
+  }
+  ctx.lineTo(project(ru, 1).x, project(ru, 1).y);
+  for (let i = 1; i <= steps; i++) {
+    const angle = Math.PI / 2 + (Math.PI / 2) * (i / steps);
+    const pt = project(ru + ru * Math.cos(angle), 1 - rv + rv * Math.sin(angle));
+    ctx.lineTo(pt.x, pt.y);
+  }
+  ctx.lineTo(project(0, rv).x, project(0, rv).y);
+  for (let i = 1; i <= steps; i++) {
+    const angle = Math.PI + (Math.PI / 2) * (i / steps);
+    const pt = project(ru + ru * Math.cos(angle), rv + rv * Math.sin(angle));
+    ctx.lineTo(pt.x, pt.y);
+  }
+  ctx.closePath();
+}
+
+function drawPerspectiveImage(ctx, image, corners, columns = 12, rows = 22) {
   const width = image.width || image.naturalWidth;
   const height = image.height || image.naturalHeight;
   const project = makeProjector(corners);
@@ -207,7 +251,7 @@ function drawMarqueeText(ctx, text, boxX, boxY, boxW, boxH, font, color, time, {
   ctx.font = font;
   const textW = ctx.measureText(value).width;
   ctx.beginPath();
-  ctx.rect(boxX, boxY, boxW, boxH);
+  ctx.rect(boxX, boxY - 12, boxW, boxH + 24);
   ctx.clip();
   ctx.fillStyle = color;
   ctx.textAlign = 'left';
@@ -374,6 +418,41 @@ export class PlayerRenderer {
     this.spotifyBgKey = null;
     this.spotifyBgCanvas = null;
     this.customBackground = null;
+    this.phoneAestheticBackground = null;
+    this.phoneAestheticBackgroundReady = null;
+    this.phoneCustomBackground = null;
+    this.phoneScreenCanvas = null;
+  }
+
+  ensurePhoneAestheticBackground() {
+    if (!this.phoneAestheticBackgroundReady) {
+      this.phoneAestheticBackgroundReady = loadPhoneAestheticBackground().then((image) => {
+        this.phoneAestheticBackground = image;
+        this.draw();
+        return image;
+      }).catch((error) => {
+        this.phoneAestheticBackgroundError = error;
+        return null;
+      });
+    }
+    return this.phoneAestheticBackgroundReady;
+  }
+
+  setPhoneCustomBackground(url) {
+    if (url && typeof ImageBitmap !== 'undefined' && url instanceof ImageBitmap) {
+      this.phoneCustomBackground = url;
+      this.draw();
+      return;
+    }
+    this.phoneCustomBackground = null;
+    if (url && typeof Image !== 'undefined') {
+      const image = new Image();
+      image.onload = () => { if (this.phoneCustomBackground === image) this.draw(); };
+      image.onerror = () => { if (this.phoneCustomBackground === image) this.phoneCustomBackground = null; };
+      this.phoneCustomBackground = image;
+      image.src = url;
+    }
+    this.draw();
   }
 
   ensureModelBackground() {
@@ -656,6 +735,10 @@ export class PlayerRenderer {
     }
     if (s.template === 'glass') {
       this.drawGlass(s, W, H, time);
+      return;
+    }
+    if (s.template === 'phone-aesthetic') {
+      this.drawPhoneAesthetic(s, W, H, time);
       return;
     }
     if (s.template === 'spotify') {
@@ -1787,6 +1870,636 @@ export class PlayerRenderer {
     ctx.fill();
     ctx.fillRect(nX + s * 0.45, cy - s * 0.6, s * 0.25, s * 1.2);
 
+    ctx.restore();
+  }
+
+  drawPhoneAesthetic(s, W, H, time = 0) {
+    const ctx = this.ctx;
+    if (!this.phoneCustomBackground && !this.phoneAestheticBackground) {
+      this.ensurePhoneAestheticBackground();
+      ctx.fillStyle = '#1c1514';
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
+    const bgImg = isImageDrawable(this.phoneCustomBackground) ? this.phoneCustomBackground : this.phoneAestheticBackground;
+    if (!isImageDrawable(bgImg)) {
+      ctx.fillStyle = '#1c1514';
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
+    const imgW = bgImg.naturalWidth || bgImg.width || 576;
+    const imgH = bgImg.naturalHeight || bgImg.height || 1024;
+    const userScale = Math.max(0.4, Math.min(2.5, (Number(s.phoneBgScale) || 100) / 100));
+    const userOffsetX = ((Number(s.phoneBgPosX) || 0) / 100) * W;
+    const userOffsetY = ((Number(s.phoneBgPosY) || 0) / 100) * H;
+    const portrait = H > W * 1.2;
+    const landscape = W > H * 1.25;
+
+    let scale, bx, by, bw, bh;
+    if (portrait) {
+      scale = Math.max(W / imgW, H / imgH) * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = (H - bh) / 2 + userOffsetY;
+    } else if (landscape) {
+      scale = (H / imgH) * 1.15 * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = (H - bh) / 2 + userOffsetY;
+    } else {
+      scale = Math.max(W / imgW, H / imgH) * 1.12 * userScale;
+      bw = imgW * scale;
+      bh = imgH * scale;
+      bx = (W - bw) / 2 + userOffsetX;
+      by = H * 0.5 - 0.58 * bh + userOffsetY;
+    }
+
+    const brightness = clamp(Number(s.phoneBgBrightness ?? 100), 20, 200);
+    const saturation = clamp(Number(s.phoneBgSaturation ?? 100), 0, 250);
+    const blurPx = Math.max(0, Math.min(30, Number(s.phoneBgBlur ?? 0)));
+
+    if (landscape) {
+      ctx.save();
+      ctx.filter = `blur(32px) brightness(${brightness * 0.72}%) saturate(${saturation}%)`;
+      const fillScale = Math.max(W / imgW, H / imgH) * 1.05;
+      const fbw = imgW * fillScale;
+      const fbh = imgH * fillScale;
+      ctx.drawImage(bgImg, (W - fbw) / 2, (H - fbh) / 2, fbw, fbh);
+      ctx.restore();
+    }
+
+    ctx.save();
+    const filterParts = [];
+    if (brightness !== 100) filterParts.push(`brightness(${brightness}%)`);
+    if (saturation !== 100) filterParts.push(`saturate(${saturation}%)`);
+    if (blurPx > 0) filterParts.push(`blur(${blurPx}px)`);
+    if (filterParts.length > 0) ctx.filter = filterParts.join(' ');
+    ctx.drawImage(bgImg, bx, by, bw, bh);
+    ctx.restore();
+
+    const tlU = Number(s.phoneScreenTLX ?? PHONE_AESTHETIC_DEFAULTS.tl.x);
+    const tlV = Number(s.phoneScreenTLY ?? PHONE_AESTHETIC_DEFAULTS.tl.y);
+    const trU = Number(s.phoneScreenTRX ?? PHONE_AESTHETIC_DEFAULTS.tr.x);
+    const trV = Number(s.phoneScreenTRY ?? PHONE_AESTHETIC_DEFAULTS.tr.y);
+    const brU = Number(s.phoneScreenBRX ?? PHONE_AESTHETIC_DEFAULTS.br.x);
+    const brV = Number(s.phoneScreenBRY ?? PHONE_AESTHETIC_DEFAULTS.br.y);
+    const blU = Number(s.phoneScreenBLX ?? PHONE_AESTHETIC_DEFAULTS.bl.x);
+    const blV = Number(s.phoneScreenBLY ?? PHONE_AESTHETIC_DEFAULTS.bl.y);
+
+    const pTL = { x: bx + tlU * bw, y: by + tlV * bh };
+    const pTR = { x: bx + trU * bw, y: by + trV * bh };
+    const pBR = { x: bx + brU * bw, y: by + brV * bh };
+    const pBL = { x: bx + blU * bw, y: by + blV * bh };
+    const corners = [pTL, pTR, pBR, pBL];
+
+    const glowIntensity = clamp(Number(s.phoneScreenGlow ?? 40) / 100, 0, 1);
+    if (glowIntensity > 0.01) {
+      const gcx = (pTL.x + pTR.x + pBR.x + pBL.x) / 4;
+      const gcy = (pTL.y + pTR.y + pBR.y + pBL.y) / 4;
+      const gRadius = Math.hypot(pBR.x - pTL.x, pBR.y - pTL.y) * 0.85;
+      const glowGrad = ctx.createRadialGradient(gcx, gcy, gRadius * 0.25, gcx, gcy, gRadius);
+      const glowCol = s.phonePlayerBg || '#d32626';
+      glowGrad.addColorStop(0, toRgba(glowCol, 0.26 * glowIntensity));
+      glowGrad.addColorStop(0.5, toRgba(glowCol, 0.08 * glowIntensity));
+      glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.save();
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(gcx, gcy, gRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (!this.phoneScreenCanvas) this.phoneScreenCanvas = makeCanvas(540, 1170);
+    const sCtx = this.phoneScreenCanvas.getContext('2d');
+    sCtx.clearRect(0, 0, 540, 1170);
+
+    let playerBg = s.phonePlayerBg || '#d32626';
+    let playerText = s.phonePlayerText || '#ffffff';
+    let progressColor = s.phoneProgressColor || '#ffffff';
+
+    const theme = s.phonePlayerTheme || 'red';
+    if (theme === 'red') {
+      playerBg = s.phonePlayerBg || '#d32626';
+      playerText = s.phonePlayerText || '#ffffff';
+      progressColor = s.phoneProgressColor || '#ffffff';
+    } else if (theme === 'dark') {
+      playerBg = '#0e0f14';
+      playerText = '#f2f3f7';
+      progressColor = '#ffffff';
+    } else if (theme === 'cover' && this.palette) {
+      playerBg = this.palette.deep || '#1a1018';
+      playerText = '#ffffff';
+      progressColor = this.palette.primary || '#ffffff';
+    } else if (theme === 'retro') {
+      playerBg = '#2c1c11';
+      playerText = '#f7e7c4';
+      progressColor = '#e6a147';
+    }
+
+    sCtx.save();
+    roundedRect(sCtx, 0, 0, 540, 1170, 46);
+    sCtx.clip();
+
+    const bgGrad = sCtx.createLinearGradient(0, 0, 0, 1170);
+    bgGrad.addColorStop(0, playerBg);
+    bgGrad.addColorStop(0.72, toRgba(playerBg, 0.94));
+    bgGrad.addColorStop(1, toRgba(playerBg, 0.86));
+    sCtx.fillStyle = bgGrad;
+    sCtx.fillRect(0, 0, 540, 1170);
+
+    // Status Bar
+    sCtx.fillStyle = playerText;
+    sCtx.font = '600 24px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    sCtx.textAlign = 'left';
+    sCtx.textBaseline = 'middle';
+    sCtx.fillText('11:33', 52, 42);
+
+    // Dynamic Island
+    sCtx.fillStyle = '#000000';
+    roundedRect(sCtx, 270 - 66, 26, 132, 34, 17);
+    sCtx.fill();
+    sCtx.fillStyle = '#0a0a14';
+    sCtx.beginPath();
+    sCtx.arc(270 + 35, 43, 5, 0, Math.PI * 2);
+    sCtx.fill();
+
+    // Signal Bars
+    for (let b = 0; b < 4; b++) {
+      const bh = 5 + b * 3.5;
+      roundedRect(sCtx, 540 - 146 + b * 6.5, 49 - bh, 3.8, bh, 1.2);
+      sCtx.fillStyle = playerText;
+      sCtx.fill();
+    }
+
+    // Wifi Icon
+    sCtx.strokeStyle = playerText;
+    sCtx.lineWidth = 2;
+    sCtx.lineCap = 'round';
+    sCtx.beginPath(); sCtx.arc(540 - 105, 48, 10, -Math.PI * 0.75, -Math.PI * 0.25); sCtx.stroke();
+    sCtx.beginPath(); sCtx.arc(540 - 105, 48, 6.5, -Math.PI * 0.75, -Math.PI * 0.25); sCtx.stroke();
+    sCtx.beginPath(); sCtx.arc(540 - 105, 48, 3, -Math.PI * 0.75, -Math.PI * 0.25); sCtx.stroke();
+    sCtx.beginPath(); sCtx.arc(540 - 105, 47, 1.5, 0, Math.PI * 2); sCtx.fillStyle = playerText; sCtx.fill();
+
+    // Battery Icon
+    sCtx.strokeStyle = toRgba(playerText, 0.85);
+    sCtx.lineWidth = 1.8;
+    roundedRect(sCtx, 540 - 82, 34, 28, 16, 4);
+    sCtx.stroke();
+    sCtx.fillStyle = toRgba(playerText, 0.85);
+    roundedRect(sCtx, 540 - 79, 37, 18, 10, 2);
+    sCtx.fill();
+    roundedRect(sCtx, 540 - 53, 39, 2.2, 6, 1);
+    sCtx.fill();
+
+    // Top Header: Downward chevron, playlist header, options
+    sCtx.strokeStyle = toRgba(playerText, 0.7);
+    sCtx.lineWidth = 2.5;
+    sCtx.lineCap = 'round';
+    sCtx.lineJoin = 'round';
+    sCtx.beginPath();
+    sCtx.moveTo(52, 92);
+    sCtx.lineTo(60, 100);
+    sCtx.lineTo(68, 92);
+    sCtx.stroke();
+
+    sCtx.fillStyle = toRgba(playerText, 0.6);
+    sCtx.font = '600 12px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    sCtx.textAlign = 'center';
+    sCtx.textBaseline = 'middle';
+    sCtx.fillText('PLAYING FROM PLAYLIST', 270, 88);
+    sCtx.fillStyle = toRgba(playerText, 0.95);
+    sCtx.font = '700 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    sCtx.fillText('Favorites', 270, 104);
+
+    sCtx.fillStyle = toRgba(playerText, 0.75);
+    for (let d = -1; d <= 1; d++) {
+      sCtx.beginPath();
+      sCtx.arc(540 - 60 + d * 7, 98, 2.2, 0, Math.PI * 2);
+      sCtx.fill();
+    }
+
+    // Album cover
+    const artX = 65, artY = 136, artSize = 410;
+    sCtx.save();
+    sCtx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+    sCtx.shadowBlur = 24;
+    sCtx.shadowOffsetY = 12;
+    roundedRect(sCtx, artX, artY, artSize, artSize, 26);
+    sCtx.fillStyle = '#1c1524';
+    sCtx.fill();
+    sCtx.restore();
+
+    cropImage(sCtx, this.image, artX, artY, artSize, artSize, 26);
+
+    sCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    sCtx.lineWidth = 1.5;
+    roundedRect(sCtx, artX, artY, artSize, artSize, 26);
+    sCtx.stroke();
+
+    // Title and Artist
+    const scrollTime = s.offline ? (s.current || 0) : (time || 0);
+    const titleY = 574;
+    const titleBoxW = 350;
+    const marqueeEnabled = s.phoneMarqueeEnabled !== false;
+    const marqueeSpeed = Number(s.phoneMarqueeSpeed) || 45;
+
+    sCtx.save();
+    sCtx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    sCtx.shadowBlur = 4;
+    sCtx.shadowOffsetY = 1.5;
+
+    drawMarqueeText(
+      sCtx,
+      s.title || 'Judul Lagu',
+      artX,
+      titleY,
+      titleBoxW,
+      36,
+      '800 34px system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      '#ffffff',
+      scrollTime,
+      { speed: marqueeSpeed, enableMarquee: marqueeEnabled }
+    );
+
+    // Heart icon
+    this.drawPhoneHeartIcon(sCtx, 540 - 72, titleY + 18, 22, toRgba(playerText, 0.85));
+
+    // Artist
+    const artistY = 616;
+    drawMarqueeText(
+      sCtx,
+      s.artist || 'Nama Artis',
+      artX,
+      artistY,
+      titleBoxW,
+      26,
+      '600 24px system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      toRgba(playerText, 0.92),
+      scrollTime,
+      { speed: marqueeSpeed * 0.9, enableMarquee: marqueeEnabled }
+    );
+    sCtx.restore();
+
+    // Audio Spectrum on phone screen
+    const spectrumEnabled = s.phoneSpectrumEnabled !== false;
+    if (spectrumEnabled) {
+      const specY = 652;
+      const specH = 30;
+      const specW = artSize;
+      const specX = artX;
+      const count = 30;
+      const gap = 3.5;
+      const barW = (specW - gap * (count - 1)) / count;
+      const animTime = s.offline ? (s.current || 0) : (time || (typeof performance !== 'undefined' ? performance.now() / 1000 : 0));
+      const spectrum = s.renderSpectrum || this.spectrum;
+      const isPlaying = Boolean(s.playing);
+
+      sCtx.save();
+      for (let i = 0; i < count; i++) {
+        const sampleIdx = Math.floor((i / count) * (spectrum?.length || 32));
+        const dataVal = spectrum?.length ? (spectrum[sampleIdx] / 255) : 0.16;
+        const wave1 = Math.sin(i * 0.44 + animTime * (isPlaying ? 4.2 : 0.6));
+        const wave2 = Math.cos(i * 0.30 - animTime * (isPlaying ? 3.2 : 0.4));
+        const wave = 0.22 + 0.38 * Math.abs(wave1) + 0.22 * Math.abs(wave2);
+
+        const activeFactor = isPlaying ? (dataVal * 0.68 + wave * 0.52) : (wave * 0.28);
+        const bh = Math.max(3.5, specH * Math.min(1, activeFactor));
+        const bx = specX + i * (barW + gap);
+        const by = specY + specH - bh;
+
+        const barGrad = sCtx.createLinearGradient(0, by + bh, 0, by);
+        barGrad.addColorStop(0, toRgba(progressColor, 0.45));
+        barGrad.addColorStop(0.55, toRgba(progressColor, 0.85));
+        barGrad.addColorStop(1, '#ffffff');
+
+        sCtx.fillStyle = barGrad;
+        sCtx.shadowColor = toRgba(progressColor, 0.45);
+        sCtx.shadowBlur = isPlaying ? 5 : 2;
+        roundedRect(sCtx, bx, by, barW, bh, barW / 2);
+        sCtx.fill();
+      }
+      sCtx.restore();
+    }
+
+    // Progress bar
+    const progY = 700;
+    const progW = artSize;
+    const progH = 6;
+    const progress = clamp(s.duration > 0 ? (s.current / s.duration) : (s.progress || 0), 0, 1);
+
+    sCtx.fillStyle = toRgba(playerText, 0.22);
+    roundedRect(sCtx, artX, progY, progW, progH, 3);
+    sCtx.fill();
+
+    if (progress > 0) {
+      sCtx.fillStyle = progressColor;
+      roundedRect(sCtx, artX, progY, Math.max(progH, progW * progress), progH, 3);
+      sCtx.fill();
+    }
+
+    const thumbX = artX + progW * progress;
+    sCtx.save();
+    sCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    sCtx.shadowBlur = 6;
+    sCtx.fillStyle = progressColor;
+    sCtx.beginPath();
+    sCtx.arc(thumbX, progY + progH / 2, 7, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.restore();
+
+    // Timers
+    if (s.phoneTimerEnabled !== false) {
+      sCtx.font = '500 18px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      sCtx.fillStyle = toRgba(playerText, 0.65);
+      sCtx.textBaseline = 'alphabetic';
+      sCtx.textAlign = 'left';
+      sCtx.fillText(formatTime(s.current || 0), artX, 730);
+      sCtx.textAlign = 'right';
+      sCtx.fillText(`-${formatTime(Math.max(0, (s.duration || 0) - (s.current || 0)))}`, artX + progW, 730);
+    }
+
+    // Controls
+    if (s.phoneControlsEnabled !== false) {
+      const ctrlCenterY = 798;
+      const playBtnRadius = 38;
+
+      // Shuffle icon
+      this.drawPhoneShuffleIcon(sCtx, 95, ctrlCenterY, 20, toRgba(playerText, 0.7));
+
+      // Previous button
+      sCtx.fillStyle = playerText;
+      this.drawPhoneSkipIcon(sCtx, 178, ctrlCenterY, 22, -1);
+
+      // Play/Pause button
+      sCtx.fillStyle = playerText;
+      sCtx.beginPath();
+      sCtx.arc(270, ctrlCenterY, playBtnRadius, 0, Math.PI * 2);
+      sCtx.fill();
+
+      // Icon inside button
+      sCtx.fillStyle = playerBg;
+      if (s.playing) {
+        const pbw = 6, pbh = 24, pgap = 7;
+        roundedRect(sCtx, 270 - pgap / 2 - pbw, ctrlCenterY - pbh / 2, pbw, pbh, 2.5);
+        sCtx.fill();
+        roundedRect(sCtx, 270 + pgap / 2, ctrlCenterY - pbh / 2, pbw, pbh, 2.5);
+        sCtx.fill();
+      } else {
+        sCtx.beginPath();
+        const ptw = 20, pth = 24;
+        sCtx.moveTo(270 - ptw * 0.38, ctrlCenterY - pth / 2);
+        sCtx.lineTo(270 + ptw * 0.62, ctrlCenterY);
+        sCtx.lineTo(270 - ptw * 0.38, ctrlCenterY + pth / 2);
+        sCtx.closePath();
+        sCtx.fill();
+      }
+
+      // Next button
+      sCtx.fillStyle = playerText;
+      this.drawPhoneSkipIcon(sCtx, 362, ctrlCenterY, 22, 1);
+
+      // Repeat icon
+      this.drawPhoneRepeatIcon(sCtx, 445, ctrlCenterY, 20, toRgba(playerText, 0.7));
+
+      // Volume slider
+      const volY = 878;
+      this.drawPhoneSpeakerIcon(sCtx, 75, volY, 15, 0, toRgba(playerText, 0.6));
+      sCtx.fillStyle = toRgba(playerText, 0.22);
+      roundedRect(sCtx, 100, volY - 2, 340, 4, 2);
+      sCtx.fill();
+      sCtx.fillStyle = toRgba(playerText, 0.7);
+      roundedRect(sCtx, 100, volY - 2, 340 * clamp(s.volume ?? 0.8), 4, 2);
+      sCtx.fill();
+      this.drawPhoneSpeakerIcon(sCtx, 465, volY, 15, 2, toRgba(playerText, 0.75));
+    }
+
+    // "About the artist" card preview peeking from bottom
+    const cardPeekY = 938;
+    roundedRect(sCtx, 52, cardPeekY, 436, 180, 22);
+    sCtx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    sCtx.fill();
+    sCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    sCtx.lineWidth = 1;
+    roundedRect(sCtx, 52, cardPeekY, 436, 180, 22);
+    sCtx.stroke();
+
+    sCtx.fillStyle = playerText;
+    sCtx.font = '700 17px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    sCtx.textAlign = 'left';
+    sCtx.textBaseline = 'alphabetic';
+    sCtx.fillText('About the artist', 74, cardPeekY + 34);
+
+    sCtx.fillStyle = toRgba(playerText, 0.75);
+    sCtx.font = '500 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    sCtx.fillText(s.artist || 'Artist', 74, cardPeekY + 60);
+
+    // Home indicator
+    sCtx.fillStyle = toRgba(playerText, 0.85);
+    roundedRect(sCtx, (540 - 160) / 2, 1170 - 22, 160, 5, 2.5);
+    sCtx.fill();
+
+    // Realistic glass sheen
+    const glassGrad = sCtx.createLinearGradient(0, 0, 540 * 0.85, 1170);
+    glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+    glassGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.04)');
+    glassGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.0)');
+    glassGrad.addColorStop(0.85, 'rgba(255, 255, 255, 0.02)');
+    glassGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+    sCtx.fillStyle = glassGrad;
+    sCtx.fillRect(0, 0, 540, 1170);
+
+    sCtx.restore();
+
+    const project = makeProjector(corners);
+
+    // 1. Fill solid screen background with perspective rounded corners (prevents hairline seams)
+    ctx.save();
+    tracePerspectiveRoundedRect(ctx, project, 0.082, 0.038);
+    ctx.fillStyle = playerBg;
+    ctx.fill();
+    ctx.restore();
+
+    // 2. Perspective Projection onto Quad with perspective rounded screen corners
+    ctx.save();
+    tracePerspectiveRoundedRect(ctx, project, 0.082, 0.038);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    drawPerspectiveImage(ctx, this.phoneScreenCanvas, corners, 10, 18);
+    ctx.restore();
+
+    // Subtle inner glass bezel shadow / stroke
+    ctx.save();
+    tracePerspectiveRoundedRect(ctx, project, 0.082, 0.038);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.lineWidth = Math.max(1.2, Math.min(W, H) * 0.0022);
+    ctx.stroke();
+    ctx.restore();
+
+    if (s.phoneCalibrating) {
+      this.drawCalibrationGuides(ctx, corners);
+    }
+  }
+
+  drawPhoneHeartIcon(ctx, cx, cy, size, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const s = size / 20;
+    ctx.beginPath();
+    ctx.moveTo(0, s * 4.5);
+    ctx.bezierCurveTo(-s * 0.5, s * 3.5, -s * 9, -s * 2, -s * 9, -s * 5.5);
+    ctx.bezierCurveTo(-s * 9, -s * 9, -s * 4.5, -s * 10, 0, -s * 5.5);
+    ctx.bezierCurveTo(s * 4.5, -s * 10, s * 9, -s * 9, s * 9, -s * 5.5);
+    ctx.bezierCurveTo(s * 9, -s * 2, s * 0.5, s * 3.5, 0, s * 4.5);
+    ctx.closePath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawPhoneShuffleIcon(ctx, cx, cy, size, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const s = size / 18;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-s * 7, -s * 5);
+    ctx.lineTo(-s * 2, -s * 5);
+    ctx.lineTo(s * 3, s * 5);
+    ctx.lineTo(s * 7, s * 5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s * 4.5, s * 2.5);
+    ctx.lineTo(s * 7.5, s * 5);
+    ctx.lineTo(s * 4.5, s * 7.5);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-s * 7, s * 5);
+    ctx.lineTo(-s * 2, s * 5);
+    ctx.lineTo(s * 0.5, s * 1.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s * 1.5, -s * 1.5);
+    ctx.lineTo(s * 3, -s * 5);
+    ctx.lineTo(s * 7, -s * 5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s * 4.5, -s * 7.5);
+    ctx.lineTo(s * 7.5, -s * 5);
+    ctx.lineTo(s * 4.5, -s * 2.5);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawPhoneRepeatIcon(ctx, cx, cy, size, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const s = size / 18;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 6, -Math.PI * 0.78, Math.PI * 0.78);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s * 2, s * 5);
+    ctx.lineTo(s * 6, s * 6.5);
+    ctx.lineTo(s * 5.5, s * 2.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawPhoneSpeakerIcon(ctx, cx, cy, size, waves, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const s = size / 16;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-s * 6, -s * 3.5);
+    ctx.lineTo(-s * 2.5, -s * 3.5);
+    ctx.lineTo(s * 2, -s * 7);
+    ctx.lineTo(s * 2, s * 7);
+    ctx.lineTo(-s * 2.5, s * 3.5);
+    ctx.lineTo(-s * 6, s * 3.5);
+    ctx.closePath();
+    ctx.fill();
+    if (waves > 0) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(s * 0.5, 0, s * 4.5, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.stroke();
+      if (waves > 1) {
+        ctx.beginPath();
+        ctx.arc(s * 0.5, 0, s * 8, -Math.PI * 0.38, Math.PI * 0.38);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  drawPhoneSkipIcon(ctx, cx, cy, size, direction) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(direction < 0 ? -1 : 1, 1);
+    const w = size, h = size * 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.45, -h * 0.48);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(-w * 0.45, h * 0.48);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -h * 0.48);
+    ctx.lineTo(w * 0.45, 0);
+    ctx.lineTo(0, h * 0.48);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillRect(w * 0.48, -h * 0.48, w * 0.14, h * 0.96);
+    ctx.restore();
+  }
+
+  drawCalibrationGuides(ctx, corners) {
+    const [tl, tr, br, bl] = corners;
+    ctx.save();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    tracePerspectiveRoundedRect(ctx, makeProjector(corners), 0.082, 0.038);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    corners.forEach((pt, i) => {
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(labels[i], pt.x, pt.y - 16);
+    });
     ctx.restore();
   }
 

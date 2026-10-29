@@ -48,8 +48,10 @@ test('production app serves only its local client renderer and static assets', a
     assert.match(html, /Minimal Player/);
     assert.match(html, /Glass Music Player/);
     assert.match(html, /Purple Glass/);
+    assert.match(html, /Phone Music Aesthetic/);
     assert.match(html, /glass-controls/);
     assert.match(html, /purple-glass-controls/);
+    assert.match(html, /phone-aesthetic-controls/);
     assert.doesNotMatch(html, /iPhone Model/);
     assert.match(html, /carousel-depth/);
     assert.match(html, /background-intensity/);
@@ -97,6 +99,8 @@ test('production app serves only its local client renderer and static assets', a
     assert.match(playerRenderer, /drawSpotify\(/);
     assert.match(playerRenderer, /drawSpotifyCard\(/);
     assert.match(playerRenderer, /drawIphoneModel\(/);
+    assert.match(playerRenderer, /drawPhoneAesthetic\(/);
+    assert.match(playerRenderer, /phone-aesthetic-clean\.jpg/);
     assert.match(playerRenderer, /iphone-model-background\.png/);
     assert.match(playerRenderer, /IPHONE_SCREEN_CORNERS/);
     assert.match(playerRenderer, /drawPerspectiveImage\(/);

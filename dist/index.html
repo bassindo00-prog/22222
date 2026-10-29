@@ -116,6 +116,7 @@
             <button type="button" data-template="spotify" class="template-option" aria-pressed="false"><span class="template-preview spotify-preview"><span class="spotify-mini-card far"></span><span class="spotify-mini-card side"></span><span class="spotify-mini-card selected"></span><span class="spotify-mini-card side right"></span><span class="spotify-mini-bar"></span></span><b>Spotify Carousel</b><span>Cover carousel dan floating player</span></button>
               <button type="button" data-template="glass" class="template-option" aria-pressed="false"><span class="template-preview glass-preview"><span class="glass-mini-glow"></span><span class="glass-mini-card"><span class="glass-mini-art"></span><span class="glass-mini-lines"><i></i><i></i></span><span class="glass-mini-badge"></span><span class="glass-mini-bar"></span></span></span><b>Glass Music Player</b><span>Glassmorphism player dengan blue glow</span></button>
               <button type="button" data-template="purple-glass" class="template-option" aria-pressed="false"><span class="template-preview purple-preview"><span class="purple-mini-glow"></span><span class="purple-mini-panel"><span class="purple-mini-art"></span><span class="purple-mini-lines"><i></i><i></i></span></span></span><b>Purple Glass</b><span>Liquid glass & scrolling text</span></button>
+              <button type="button" data-template="phone-aesthetic" class="template-option" aria-pressed="false"><span class="template-preview phone-aesthetic-preview"><span class="phone-mini-desk"></span><span class="phone-mini-device"><span class="phone-mini-screen"></span></span></span><b>Phone Music Aesthetic</b><span>Smartphone aesthetic di atas meja</span></button>
           </div>
             <label class="spectrum-toggle-row" for="spectrum-toggle"><span><strong>Audio spectrum</strong><small>Tampilkan gelombang audio di player</small></span><input id="spectrum-toggle" type="checkbox" aria-label="Tampilkan audio spectrum" /></label>
           </div>
@@ -206,6 +207,133 @@
             <div class="glass-range"><label for="border-light-glow"><span>Intensitas Glow</span><output id="border-light-glow-value">60%</output></label><input id="border-light-glow" type="range" min="0" max="100" step="5" value="60" aria-label="Intensitas Glow Border" /></div>
             <div class="glass-range"><label for="border-light-duration"><span>Durasi Putaran (Kecepatan)</span><output id="border-light-duration-value">6.0 s</output></label><input id="border-light-duration" type="range" min="2.0" max="15.0" step="0.5" value="6.0" aria-label="Durasi Putaran Border" /></div>
             <div class="glass-range"><label for="border-light-trail"><span>Panjang Ekor Cahaya (Trail)</span><output id="border-light-trail-value">15%</output></label><input id="border-light-trail" type="range" min="5" max="35" step="1" value="15" aria-label="Panjang Ekor Cahaya" /></div>
+          </div>
+
+          <div id="phone-aesthetic-controls" class="glass-controls phone-controls" hidden>
+            <div class="field-label-row"><span class="group-label">Pengaturan Phone Aesthetic</span><span class="label-hint">SMARTPHONE SCREEN</span></div>
+
+            <!-- Player Theme & Colors -->
+            <div class="theme-select-row">
+              <label for="phone-player-theme">Tema Player Layar</label>
+              <select id="phone-player-theme" aria-label="Pilih Tema Player Smartphone">
+                <option value="red" selected>Aesthetic Red (Default)</option>
+                <option value="dark">OLED Midnight Dark</option>
+                <option value="cover">Dynamic Cover Palette</option>
+                <option value="retro">Vintage Amber</option>
+                <option value="custom">Kustom Sendiri</option>
+              </select>
+            </div>
+
+            <div class="phone-color-grid">
+              <div class="color-row">
+                <label for="phone-player-bg">Layar HP</label>
+                <input id="phone-player-bg" type="color" value="#d32626" aria-label="Warna Background Layar Smartphone" />
+                <span id="phone-player-bg-value">#D32626</span>
+              </div>
+              <div class="color-row">
+                <label for="phone-player-text">Teks Layar</label>
+                <input id="phone-player-text" type="color" value="#ffffff" aria-label="Warna Teks Layar Smartphone" />
+                <span id="phone-player-text-value">#FFFFFF</span>
+              </div>
+              <div class="color-row">
+                <label for="phone-progress-color">Progress</label>
+                <input id="phone-progress-color" type="color" value="#ffffff" aria-label="Warna Progress Bar" />
+                <span id="phone-progress-color-value">#FFFFFF</span>
+              </div>
+            </div>
+
+            <label class="spectrum-toggle-row" for="phone-controls-toggle"><span><strong>Tombol Kontrol Playback</strong><small>Previous, Play/Pause dinamis, Next di layar HP</small></span><input id="phone-controls-toggle" type="checkbox" checked aria-label="Aktifkan Kontrol Musik" /></label>
+            <label class="spectrum-toggle-row" for="phone-timer-toggle"><span><strong>Durasi & Timer Lagu</strong><small>Waktu berjalan & sisa durasi di layar HP</small></span><input id="phone-timer-toggle" type="checkbox" checked aria-label="Aktifkan Timer Musik" /></label>
+            <label class="spectrum-toggle-row" for="phone-marquee-toggle"><span><strong>Scrolling Song Title (Marquee)</strong><small>Geser judul/artis panjang secara otomatis</small></span><input id="phone-marquee-toggle" type="checkbox" checked aria-label="Aktifkan Scrolling Text" /></label>
+            <label class="spectrum-toggle-row" for="phone-spectrum-toggle"><span><strong>Audio Spectrum di Layar HP</strong><small>Visualizer gelombang audio dinamis di layar smartphone</small></span><input id="phone-spectrum-toggle" type="checkbox" checked aria-label="Aktifkan Audio Spectrum di Layar HP" /></label>
+
+            <div class="glass-range"><label for="phone-marquee-speed"><span>Kecepatan Marquee</span><output id="phone-marquee-speed-value">45 px/s</output></label><input id="phone-marquee-speed" type="range" min="20" max="90" value="45" aria-label="Kecepatan Marquee" /></div>
+            <div class="glass-range"><label for="phone-screen-glow"><span>Intensitas Screen Glow</span><output id="phone-screen-glow-value">40%</output></label><input id="phone-screen-glow" type="range" min="0" max="100" value="40" aria-label="Intensitas Screen Glow" /></div>
+
+            <!-- Custom Background Section -->
+            <div class="phone-section-divider"></div>
+            <div class="field-label-row"><span class="group-label">Background Aesthetic</span><span class="label-hint">FOTO MEJA</span></div>
+
+            <div class="glass-upload-box">
+              <div class="field-label-row"><span class="field-label">Custom Background</span><span class="label-hint">JPG · PNG · WEBP</span></div>
+              <div id="phone-bg-drop" class="custom-bg-drop phone-bg-drop" tabindex="0" role="button" aria-label="Upload background kustom">
+                <input id="phone-bg-input" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden" />
+                <div id="phone-bg-empty" class="custom-bg-empty">
+                  <span class="upload-glyph">⌑</span>
+                  <span><strong>Upload foto background</strong> atau drag & drop</span>
+                  <small>Gunakan foto HP Anda sendiri · JPG, PNG, WebP</small>
+                </div>
+                <div id="phone-bg-filled" class="custom-bg-filled" hidden>
+                  <img id="phone-bg-thumb" alt="Preview background kustom" />
+                  <div>
+                    <strong id="phone-bg-name">background.jpg</strong>
+                    <small id="phone-bg-size"></small>
+                  </div>
+                  <button id="phone-bg-remove" class="icon-button" type="button" aria-label="Hapus background kustom">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-bg-actions">
+              <button id="phone-reset-bg" class="quiet-button" type="button">Kembalikan Foto Referensi Default</button>
+            </div>
+
+            <div class="glass-range"><label for="phone-bg-brightness"><span>Brightness Background</span><output id="phone-bg-brightness-value">100%</output></label><input id="phone-bg-brightness" type="range" min="30" max="160" value="100" aria-label="Brightness Background" /></div>
+            <div class="glass-range"><label for="phone-bg-saturation"><span>Saturation Background</span><output id="phone-bg-saturation-value">100%</output></label><input id="phone-bg-saturation" type="range" min="0" max="200" value="100" aria-label="Saturation Background" /></div>
+            <div class="glass-range"><label for="phone-bg-blur"><span>Blur Background</span><output id="phone-bg-blur-value">0 px</output></label><input id="phone-bg-blur" type="range" min="0" max="20" value="0" aria-label="Blur Background" /></div>
+
+            <div class="phone-position-grid">
+              <div class="glass-range"><label for="phone-bg-pos-x"><span>Posisi X</span><output id="phone-bg-pos-x-value">0%</output></label><input id="phone-bg-pos-x" type="range" min="-50" max="50" value="0" aria-label="Posisi X Background" /></div>
+              <div class="glass-range"><label for="phone-bg-pos-y"><span>Posisi Y</span><output id="phone-bg-pos-y-value">0%</output></label><input id="phone-bg-pos-y" type="range" min="-50" max="50" value="0" aria-label="Posisi Y Background" /></div>
+            </div>
+            <div class="glass-range"><label for="phone-bg-scale"><span>Zoom Background</span><output id="phone-bg-scale-value">100%</output></label><input id="phone-bg-scale" type="range" min="80" max="160" value="100" aria-label="Zoom Background" /></div>
+
+            <!-- Screen Corners Calibration Details -->
+            <details id="phone-calibration-details" class="phone-calibration-details">
+              <summary class="phone-calibration-summary">
+                <span>⚙ <strong>Kalibrasi 4 Sudut Layar HP</strong></span>
+                <small>Perspektif 4 Titik</small>
+              </summary>
+              <div class="phone-calibration-body">
+                <p class="helper-copy">Atur koordinat 4 sudut layar HP agar music player pas presisi pada bingkai layar smartphone baru atau yang diposisikan ulang.</p>
+                
+                <label class="spectrum-toggle-row" for="phone-calibrate-toggle"><span><strong>Tampilkan Titik Kalibrasi di Preview</strong><small>Garis pandu hijau & pin TL/TR/BR/BL</small></span><input id="phone-calibrate-toggle" type="checkbox" aria-label="Tampilkan Titik Kalibrasi" /></label>
+
+                <div class="corner-calibration-group">
+                  <strong>Sudut Kiri Atas (TL)</strong>
+                  <div class="calibration-pair">
+                    <label><span>X:</span><input id="phone-tl-x" type="range" min="10" max="90" step="0.1" value="49.1" /><output id="phone-tl-x-val">49.1%</output></label>
+                    <label><span>Y:</span><input id="phone-tl-y" type="range" min="10" max="90" step="0.1" value="45.2" /><output id="phone-tl-y-val">45.2%</output></label>
+                  </div>
+                </div>
+
+                <div class="corner-calibration-group">
+                  <strong>Sudut Kanan Atas (TR)</strong>
+                  <div class="calibration-pair">
+                    <label><span>X:</span><input id="phone-tr-x" type="range" min="20" max="95" step="0.1" value="69.3" /><output id="phone-tr-x-val">69.3%</output></label>
+                    <label><span>Y:</span><input id="phone-tr-y" type="range" min="10" max="90" step="0.1" value="47.5" /><output id="phone-tr-y-val">47.5%</output></label>
+                  </div>
+                </div>
+
+                <div class="corner-calibration-group">
+                  <strong>Sudut Kanan Bawah (BR)</strong>
+                  <div class="calibration-pair">
+                    <label><span>X:</span><input id="phone-br-x" type="range" min="20" max="95" step="0.1" value="61.4" /><output id="phone-br-x-val">61.4%</output></label>
+                    <label><span>Y:</span><input id="phone-br-y" type="range" min="30" max="95" step="0.1" value="73.0" /><output id="phone-br-y-val">73.0%</output></label>
+                  </div>
+                </div>
+
+                <div class="corner-calibration-group">
+                  <strong>Sudut Kiri Bawah (BL)</strong>
+                  <div class="calibration-pair">
+                    <label><span>X:</span><input id="phone-bl-x" type="range" min="10" max="90" step="0.1" value="40.0" /><output id="phone-bl-x-val">40.0%</output></label>
+                    <label><span>Y:</span><input id="phone-bl-y" type="range" min="30" max="95" step="0.1" value="70.6" /><output id="phone-bl-y-val">70.6%</output></label>
+                  </div>
+                </div>
+
+                <button id="phone-reset-calibration" class="quiet-button reset-calibration-btn" type="button">Reset Kalibrasi ke Posisi HP Default</button>
+              </div>
+            </details>
           </div>
 
           <div class="design-group quality-group"><div class="field-label-row"><span class="group-label">Kualitas video</span><span class="label-hint">ENCODER BROWSER</span></div><div class="quality-options" role="group" aria-label="Kualitas video">

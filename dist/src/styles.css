@@ -18,3 +18,34 @@
 .border-light-color-row{margin-top:0}
 .direction-row{display:flex;align-items:center;gap:6px;font-size:9px;color:#9ec5e4}
 .direction-row select{height:25px;border-radius:5px;border:1px solid #2e3d56;background:#131c2e;color:#e2e8f0;padding:2px 6px;font-size:9px;cursor:pointer}
+
+.phone-aesthetic-preview{background:radial-gradient(ellipse at 40% 40%,#523326 0%,#2b1812 55%,#140b08 100%)}
+.phone-mini-desk{position:absolute;inset:0;background:linear-gradient(135deg,rgba(230,80,50,.25),rgba(30,15,10,.6))}
+.phone-mini-device{position:absolute;left:36%;top:18%;width:32%;height:66%;border-radius:5px;background:#111116;border:1px solid rgba(255,255,255,.28);box-shadow:0 4px 10px rgba(0,0,0,.6);transform:rotate(-10deg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.phone-mini-screen{width:82%;height:86%;border-radius:3px;background:linear-gradient(180deg,#d32626 0%,#9e1818 100%);box-shadow:inset 0 0 2px rgba(255,255,255,.4)}
+.phone-controls{border-color:#7f2323;background:linear-gradient(145deg,#200c0c,#160707)}
+.theme-select-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:9px;color:#fca5a5}
+.theme-select-row select{height:26px;border-radius:5px;border:1px solid #7f1d1d;background:#2b0d0d;color:#fef2f2;padding:2px 8px;font-size:9px;cursor:pointer}
+.phone-color-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
+.phone-controls .color-row{margin-top:0}
+.phone-controls .glass-range label{color:#fca5a5}
+.phone-controls .glass-range output{color:#ef4444}
+.phone-controls .glass-range input{background:linear-gradient(90deg,#ef4444,#b91c1c)}
+.phone-controls .glass-range input::-webkit-slider-thumb{border-color:#fee2e2;background:#dc2626;box-shadow:0 0 0 2px #dc262633}
+.phone-controls .glass-range input::-moz-range-thumb{border-color:#fee2e2;background:#dc2626;box-shadow:0 0 0 2px #dc262633}
+.phone-section-divider{height:1px;background:rgba(185,28,28,.25);margin:6px 0}
+.phone-bg-drop{border-color:#7f1d1d;background:#180808}
+.phone-bg-drop:hover{border-color:#ef4444;background:#240c0c}
+.phone-bg-actions{display:flex;justify-content:flex-end;margin:4px 0 8px}
+.phone-position-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.phone-calibration-details{border:1px solid rgba(239,68,68,.3);border-radius:7px;background:rgba(20,6,6,.7);margin-top:8px;overflow:hidden}
+.phone-calibration-summary{padding:8px 10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;font-size:10px;color:#fca5a5;background:rgba(43,13,13,.5)}
+.phone-calibration-summary:hover{background:rgba(74,18,18,.6)}
+.phone-calibration-body{padding:10px;display:grid;gap:8px}
+.corner-calibration-group{background:rgba(30,8,8,.6);border:1px solid rgba(185,28,28,.2);border-radius:6px;padding:6px 8px}
+.corner-calibration-group strong{display:block;font-size:9px;color:#fecaca;margin-bottom:4px}
+.calibration-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.calibration-pair label{display:flex;align-items:center;gap:4px;font-size:8px;color:#fca5a5}
+.calibration-pair input{flex:1;height:3px}
+.calibration-pair output{font-size:8px;color:#ef4444;min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
+.reset-calibration-btn{width:100%;margin-top:4px;font-size:9px;padding:6px}

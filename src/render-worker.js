@@ -15,6 +15,7 @@ let renderer;
 let coverBitmap;
 let foregroundBitmap;
 let customBackgroundBitmap;
+let phoneCustomBackgroundBitmap;
 let audioSource;
 let videoSource;
 let frameState;
@@ -76,6 +77,30 @@ async function start(message) {
     foregroundX: config.foregroundX,
     foregroundY: config.foregroundY,
     foregroundScale: config.foregroundScale,
+    phonePlayerBg: config.phonePlayerBg,
+    phonePlayerText: config.phonePlayerText,
+    phoneProgressColor: config.phoneProgressColor,
+    phonePlayerTheme: config.phonePlayerTheme,
+    phoneControlsEnabled: config.phoneControlsEnabled,
+    phoneTimerEnabled: config.phoneTimerEnabled,
+    phoneMarqueeEnabled: config.phoneMarqueeEnabled,
+    phoneSpectrumEnabled: config.phoneSpectrumEnabled !== false,
+    phoneMarqueeSpeed: config.phoneMarqueeSpeed,
+    phoneScreenGlow: config.phoneScreenGlow,
+    phoneBgBrightness: config.phoneBgBrightness,
+    phoneBgBlur: config.phoneBgBlur,
+    phoneBgSaturation: config.phoneBgSaturation,
+    phoneBgPosX: config.phoneBgPosX,
+    phoneBgPosY: config.phoneBgPosY,
+    phoneBgScale: config.phoneBgScale,
+    phoneScreenTLX: config.phoneScreenTLX,
+    phoneScreenTLY: config.phoneScreenTLY,
+    phoneScreenTRX: config.phoneScreenTRX,
+    phoneScreenTRY: config.phoneScreenTRY,
+    phoneScreenBRX: config.phoneScreenBRX,
+    phoneScreenBRY: config.phoneScreenBRY,
+    phoneScreenBLX: config.phoneScreenBLX,
+    phoneScreenBLY: config.phoneScreenBLY,
     progress: frameState.progress,
     current: frameState.current,
     duration: frameState.duration,
@@ -88,6 +113,12 @@ async function start(message) {
     const fixedBackground = await renderer.ensureModelBackground();
     if (!fixedBackground) throw renderer.modelBackgroundError || new Error('Aset latar template iPhone tidak tersedia.');
   }
+  if (config.template === 'phone-aesthetic') {
+    const aestheticBg = await renderer.ensurePhoneAestheticBackground();
+    if (!aestheticBg && !message.phoneCustomBackground) {
+      throw renderer.phoneAestheticBackgroundError || new Error('Aset latar template Phone Music Aesthetic tidak tersedia.');
+    }
+  }
   coverBitmap = await createImageBitmap(message.cover);
   renderer.setCover(coverBitmap);
   if (message.foreground) {
@@ -97,6 +128,10 @@ async function start(message) {
   if (message.customBackground) {
     customBackgroundBitmap = await createImageBitmap(message.customBackground);
     renderer.setCustomBackground(customBackgroundBitmap);
+  }
+  if (message.phoneCustomBackground) {
+    phoneCustomBackgroundBitmap = await createImageBitmap(message.phoneCustomBackground);
+    renderer.setPhoneCustomBackground(phoneCustomBackgroundBitmap);
   }
   renderer.setSize(config.width, config.height);
 
@@ -231,8 +266,10 @@ async function dispose() {
   try { coverBitmap?.close(); } catch {}
   try { foregroundBitmap?.close(); } catch {}
   try { customBackgroundBitmap?.close(); } catch {}
+  try { phoneCustomBackgroundBitmap?.close(); } catch {}
   try { renderer?.modelBackground?.close(); } catch {}
-  audioSource = null; videoSource = null; coverBitmap = null; foregroundBitmap = null; customBackgroundBitmap = null; renderer = null; output = null;
+  try { renderer?.phoneAestheticBackground?.close(); } catch {}
+  audioSource = null; videoSource = null; coverBitmap = null; foregroundBitmap = null; customBackgroundBitmap = null; phoneCustomBackgroundBitmap = null; renderer = null; output = null;
 }
 
 self.onmessage = async ({ data }) => {
